@@ -43,7 +43,8 @@ RpUsbDispBackend::Opener RpUsbDispBackend::usb_opener() {
             auto dev = RoboPeakUsbDisplayDevice::openFirstDevice();
             if (!dev) return nullptr;
             dev->setStatusUpdatedCallback([touch](const rpusbdisp_status_normal_packet_t& s) {
-                touch(s.touch_x, s.touch_y, s.touch_status == RPUSBDISP_TOUCH_STATUS_PRESSED);
+                touch(s.touch_x, s.touch_y, s.touch_status == RPUSBDISP_TOUCH_STATUS_PRESSED,
+                      (s.display_status & RPUSBDISP_DISPLAY_STATUS_DIRTY_FLAG) != 0);
             });
             dev->enable();
             return std::make_unique<UsbDisplay>(dev);
@@ -67,7 +68,10 @@ bool RpUsbDispBackend::init(lv_display_rotation_t rotation) {
 
 void RpUsbDispBackend::try_open() {
     next_try_ = std::chrono::steady_clock::now() + retry_;
-    dev_ = opener_([this](int32_t x, int32_t y, bool pressed) { set_touch(x, y, pressed); });
+    dev_ = opener_([this](int32_t x, int32_t y, bool pressed, bool dirty) {
+        set_touch(x, y, pressed);
+        if (dirty) redraw_requested_ = true;
+    });
     if (!dev_) {
         if (!announced_waiting_) std::fprintf(stderr, "rpusbdisp: waiting for display...\n");
         announced_waiting_ = true;
@@ -75,6 +79,7 @@ void RpUsbDispBackend::try_open() {
     }
     announced_waiting_ = false;
     blit_failed_ = false;
+    redraw_requested_ = false;
     std::fprintf(stderr, "rpusbdisp: display connected\n");
     invalidate_all();
 }
@@ -90,7 +95,16 @@ void RpUsbDispBackend::poll() {
     if (dev_) {
         if (blit_failed_) drop("display not responding, reconnecting");
         else if (!dev_->alive()) drop("display disconnected");
-        else return;
+        else {
+            if (redraw_requested_.exchange(false)) {
+                ++redraws_;
+                // Rate-limited diagnostics: first few, then every 100th.
+                if (redraws_ <= 5 || redraws_ % 100 == 0)
+                    std::fprintf(stderr, "rpusbdisp: display requested a full redraw (#%lu)\n", redraws_);
+                invalidate_all();
+            }
+            return;
+        }
     }
     if (std::chrono::steady_clock::now() >= next_try_) try_open();
 }

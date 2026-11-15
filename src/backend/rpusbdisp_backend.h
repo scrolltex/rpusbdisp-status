@@ -2,6 +2,7 @@
 
 #include "backend/partial_backend.h"
 
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -18,7 +19,9 @@ public:
 
 class RpUsbDispBackend : public PartialBackend {
 public:
-    using TouchCallback = std::function<void(int32_t x, int32_t y, bool pressed)>;
+    // Called from the device thread for every status packet. `dirty` means the
+    // display lost its picture and needs a full-screen redraw.
+    using TouchCallback = std::function<void(int32_t x, int32_t y, bool pressed, bool dirty)>;
     // Returns nullptr when no display can be opened right now.
     using Opener = std::function<std::unique_ptr<DisplayDevice>(TouchCallback)>;
 
@@ -41,6 +44,8 @@ private:
     std::chrono::milliseconds retry_;
     std::unique_ptr<DisplayDevice> dev_;
     bool blit_failed_ = false;
+    std::atomic<bool> redraw_requested_{false};  // set from the SDK status thread
+    unsigned long redraws_ = 0;
     std::chrono::steady_clock::time_point next_try_{};
     bool announced_waiting_ = false;
 };

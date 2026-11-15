@@ -16,6 +16,7 @@ struct FakeState {
     bool alive = true;
     bool blit_fails = false;
     uint16_t first_pixel = 0;
+    long pixels = 0;
     RpUsbDispBackend::TouchCallback touch;
 };
 
@@ -23,8 +24,9 @@ struct FakeDevice : DisplayDevice {
     FakeState* st;
     explicit FakeDevice(FakeState* s) : st(s) {}
     bool alive() override { return st->alive; }
-    bool blit(int32_t, int32_t, int32_t, int32_t, const uint16_t* px) override {
+    bool blit(int32_t, int32_t, int32_t w, int32_t h, const uint16_t* px) override {
         ++st->blits;
+        st->pixels += long(w) * h;
         st->first_pixel = px[0];
         return !st->blit_fails;
     }
@@ -124,9 +126,9 @@ TEST_CASE("touch from the device reaches LVGL") {
                         LV_EVENT_CLICKED, &clicked);
     pump(b, 50);
     REQUIRE(st.touch);
-    st.touch(120, 120, true);
+    st.touch(120, 120, true, false);
     pump(b, 50);
-    st.touch(120, 120, false);
+    st.touch(120, 120, false, false);
     pump(b, 50);
     CHECK(clicked);
     teardown();
@@ -155,4 +157,20 @@ TEST_CASE("rgb565_to_bgr565 swaps red and blue, keeps green") {
     CHECK(rgb565_to_bgr565(0x001F) == 0xF800);
     CHECK(rgb565_to_bgr565(0x07E0) == 0x07E0);
     CHECK(rgb565_to_bgr565(0x8410) == 0x8410);
+}
+
+TEST_CASE("display reporting the dirty flag gets a full-screen redraw") {
+    FakeState st;
+    RpUsbDispBackend b(fake_opener(st), 50ms);
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    pump(b, 100);
+    REQUIRE(st.touch);
+    st.pixels = 0;
+    pump(b, 100);
+    CHECK(st.pixels == 0);  // idle: nothing redrawn
+
+    st.touch(0, 0, false, true);  // status packet with RPUSBDISP_DISPLAY_STATUS_DIRTY_FLAG
+    pump(b, 100);
+    CHECK(st.pixels == 320L * 240);
+    teardown();
 }
