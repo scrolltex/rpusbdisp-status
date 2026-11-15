@@ -1,0 +1,6 @@
+[submodule "third_party/lvgl"]
+	path = third_party/lvgl
+	url = https://github.com/lvgl/lvgl
+[submodule "third_party/rpusbdisp"]
+	path = third_party/rpusbdisp
+	url = https://github.com/scrolltex/rpusbdisp
