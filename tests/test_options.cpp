@@ -23,6 +23,16 @@ TEST_CASE("defaults") {
     CHECK(o->docker_socket == "/var/run/docker.sock");
     CHECK_FALSE(o->swap_bytes);
     CHECK(o->start_tile == 0);
+    CHECK(o->bgr);  // RoboPeak display is BGR565
+}
+
+TEST_CASE("color order") {
+    std::string err;
+    auto o = parse({"--color-order", "rgb"}, err);
+    REQUIRE(o);
+    CHECK_FALSE(o->bgr);
+    CHECK_FALSE(parse({"--color-order", "grb"}, err));
+    CHECK(err.find("color-order") != std::string::npos);
 }
 
 TEST_CASE("all options") {

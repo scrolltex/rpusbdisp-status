@@ -40,9 +40,13 @@ void PartialBackend::flush_cb(lv_display_t* d, const lv_area_t* area, uint8_t* p
         rotate_rgb565_180(px, self->tmp_.data(), w, h);
         lv_display_rotate_area(d, &phys);
         px = self->tmp_.data();
-    } else if (self->swap_bytes_) {
+    } else if (self->swap_bytes_ || self->bgr_) {
         std::memcpy(self->tmp_.data(), px, size_t(w) * h * 2);
         px = self->tmp_.data();
+    }
+    if (self->bgr_) {
+        uint16_t* p = self->tmp_.data();
+        for (int32_t i = 0, n = w * h; i < n; ++i) p[i] = rgb565_to_bgr565(p[i]);
     }
     if (self->swap_bytes_) lv_draw_rgb565_swap(const_cast<uint16_t*>(px), uint32_t(w * h));
 

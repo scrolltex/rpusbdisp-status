@@ -19,6 +19,8 @@ public:
 
     bool init(lv_display_rotation_t rotation) override;
     void set_swap_bytes(bool v) { swap_bytes_ = v; }
+    // Device expects BGR565 (red in the low bits) instead of RGB565.
+    void set_bgr(bool v) { bgr_ = v; }
 
 protected:
     // Push w*h tightly packed RGB565 pixels to physical position (x, y).
@@ -36,6 +38,7 @@ private:
     static void read_cb(lv_indev_t* indev, lv_indev_data_t* data);
 
     bool swap_bytes_ = false;
+    bool bgr_ = false;
     lv_indev_t* indev_ = nullptr;
     std::vector<uint16_t> tmp_;
     std::mutex touch_mu_;

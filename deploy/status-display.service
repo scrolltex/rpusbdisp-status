@@ -7,7 +7,7 @@ Wants=docker.service
 Type=simple
 User=statusdisp
 # Change --rotate to 180 if the display is mounted upside down.
-# Add --swap-bytes if hwcheck showed wrong colours.
+# Add --color-order rgb if red and blue are swapped, --swap-bytes if colours are garbled.
 ExecStart=/usr/local/bin/rpusbdisp-status --backend rpusbdisp --rotate 0
 Restart=always
 RestartSec=3

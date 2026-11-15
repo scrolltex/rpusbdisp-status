@@ -58,7 +58,11 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "backend '%s' is not available in this build\n", opt->backend.c_str());
         return 2;
     }
-    if (auto* pb = dynamic_cast<PartialBackend*>(backend.get())) pb->set_swap_bytes(opt->swap_bytes);
+    if (auto* pb = dynamic_cast<PartialBackend*>(backend.get())) {
+        pb->set_swap_bytes(opt->swap_bytes);
+        // Colour order is a property of the physical display; the dump file stays RGB.
+        if (opt->backend == "rpusbdisp") pb->set_bgr(opt->bgr);
+    }
     if (!backend->init(opt->rotate == 180 ? LV_DISPLAY_ROTATION_180 : LV_DISPLAY_ROTATION_0)) {
         std::fprintf(stderr, "failed to initialise backend '%s'\n", opt->backend.c_str());
         return 1;

@@ -9,7 +9,8 @@ const char* usage() {
     return "usage: rpusbdisp-status [options]\n"
            "  --backend rpusbdisp|dump|sdl  output (default rpusbdisp)\n"
            "  --rotate 0|180                screen rotation (default 0)\n"
-           "  --swap-bytes                  swap RGB565 byte order (if colours look wrong)\n"
+           "  --color-order bgr|rgb         display colour order (default bgr; rpusbdisp only)\n"
+           "  --swap-bytes                  swap the two bytes of each pixel (if colours are garbled)\n"
            "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
            "  --docker-socket PATH          default /var/run/docker.sock\n"
            "  --dump-dir DIR                where the dump backend writes frame.ppm\n"
@@ -51,6 +52,13 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
             if (!value(o.docker_socket)) return std::nullopt;
         } else if (a == "--dump-dir") {
             if (!value(o.dump_dir)) return std::nullopt;
+        } else if (a == "--color-order") {
+            if (!value(v)) return std::nullopt;
+            if (v != "bgr" && v != "rgb") {
+                error = "--color-order must be bgr or rgb";
+                return std::nullopt;
+            }
+            o.bgr = v == "bgr";
         } else if (a == "--swap-bytes") {
             o.swap_bytes = true;
         } else if (a == "--start-tile") {

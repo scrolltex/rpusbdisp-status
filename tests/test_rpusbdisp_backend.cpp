@@ -15,6 +15,7 @@ struct FakeState {
     bool available = true;   // can a device be opened right now
     bool alive = true;
     bool blit_fails = false;
+    uint16_t first_pixel = 0;
     RpUsbDispBackend::TouchCallback touch;
 };
 
@@ -22,8 +23,9 @@ struct FakeDevice : DisplayDevice {
     FakeState* st;
     explicit FakeDevice(FakeState* s) : st(s) {}
     bool alive() override { return st->alive; }
-    bool blit(int32_t, int32_t, int32_t, int32_t, const uint16_t*) override {
+    bool blit(int32_t, int32_t, int32_t, int32_t, const uint16_t* px) override {
         ++st->blits;
+        st->first_pixel = px[0];
         return !st->blit_fails;
     }
 };
@@ -128,4 +130,29 @@ TEST_CASE("touch from the device reaches LVGL") {
     pump(b, 50);
     CHECK(clicked);
     teardown();
+}
+
+static uint16_t first_pixel_of_red_screen(bool bgr) {
+    FakeState st;
+    RpUsbDispBackend b(fake_opener(st), 50ms);
+    b.set_bgr(bgr);
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFF0000), 0);
+    lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
+    pump(b, 50);
+    uint16_t px = st.first_pixel;
+    teardown();
+    return px;
+}
+
+TEST_CASE("BGR display gets red in the low 5 bits, RGB display in the high 5 bits") {
+    CHECK(first_pixel_of_red_screen(true) == 0x001F);
+    CHECK(first_pixel_of_red_screen(false) == 0xF800);
+}
+
+TEST_CASE("rgb565_to_bgr565 swaps red and blue, keeps green") {
+    CHECK(rgb565_to_bgr565(0xF800) == 0x001F);
+    CHECK(rgb565_to_bgr565(0x001F) == 0xF800);
+    CHECK(rgb565_to_bgr565(0x07E0) == 0x07E0);
+    CHECK(rgb565_to_bgr565(0x8410) == 0x8410);
 }

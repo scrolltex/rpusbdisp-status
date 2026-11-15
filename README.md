@@ -37,8 +37,11 @@ sudo ./build/hwcheck
 ```
 
 - Top half: four stripes, **red, green, blue, white** from left to right.
-- Bottom half: a gradient from black to **red**. If it is a different colour,
-  the byte order is swapped — add `--swap-bytes` to the service.
+- Bottom half: a gradient from black to **red**.
+- Colours are sent in BGR565, the order the RoboPeak display uses. If red and
+  blue are swapped, your display is RGB: check with `sudo ./build/hwcheck --rgb`
+  and start the program with `--color-order rgb`. If colours are garbled rather
+  than swapped, add `--swap-bytes`.
 - Touch the corners: the console prints coordinates, which should be close to
   `(0,0)` … `(319,239)`.
 - Unplug and re-plug the cable: it should reconnect and redraw.
@@ -54,7 +57,7 @@ sudo ./build/rpusbdisp-status                       # on the display
 ./build/rpusbdisp-status --help
 ```
 
-Options: `--rotate 0|180`, `--swap-bytes`, `--temp-path FILE` (millidegrees,
+Options: `--rotate 0|180`, `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
 auto-detected by default), `--docker-socket PATH`, `--start-tile N`.
 
 ## Install as a service
