@@ -44,6 +44,15 @@ target_include_directories(status_core SYSTEM PUBLIC third_party)
 target_compile_options(status_core PRIVATE ${WARN})
 target_link_libraries(status_core PUBLIC Threads::Threads)
 
+# ---- app (LVGL + backends + screens) -------------------------------------
+file(GLOB STATUS_APP_SOURCES CONFIGURE_DEPENDS src/backend/*.cpp src/ui/app.cpp src/ui/screen_*.cpp)
+add_library(status_app STATIC ${STATUS_APP_SOURCES})
+target_compile_options(status_app PRIVATE ${WARN})
+target_link_libraries(status_app PUBLIC status_core lvgl rpusbdisp_sdk)
+if(STATUS_SDL)
+    target_compile_definitions(status_app PUBLIC STATUS_SDL=1)
+endif()
+
 # ---- tests ---------------------------------------------------------------
 if(STATUS_TESTS)
     enable_testing()
@@ -51,7 +60,7 @@ if(STATUS_TESTS)
     add_executable(status_tests ${STATUS_TEST_SOURCES})
     target_compile_options(status_tests PRIVATE ${WARN})
     target_compile_definitions(status_tests PRIVATE FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
-    target_link_libraries(status_tests PRIVATE status_core rpusbdisp_sdk)
+    target_link_libraries(status_tests PRIVATE status_app)
     add_test(NAME status_tests COMMAND status_tests)
 endif()
 
