@@ -62,6 +62,7 @@ if(STATUS_TESTS)
     target_compile_definitions(status_tests PRIVATE FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
     target_link_libraries(status_tests PRIVATE status_app)
     add_test(NAME status_tests COMMAND status_tests)
+    add_test(NAME deploy_files COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_deploy.sh ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 # ---- hardware check tool -------------------------------------------------

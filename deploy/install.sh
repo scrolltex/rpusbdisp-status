@@ -22,7 +22,7 @@ usermod -aG plugdev statusdisp
 if getent group docker >/dev/null; then
     usermod -aG docker statusdisp
 else
-    echo "warning: group 'docker' not found; the Docker screen will show 'unavailable'" >&2
+    echo "warning: group 'docker' not found; the Docker screen will show 'Docker unavailable' (the service still starts)" >&2
 fi
 
 cmake --install "$BUILD_DIR" --prefix /usr/local

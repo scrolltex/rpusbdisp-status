@@ -52,3 +52,26 @@ TEST_CASE("swipe left goes to the next screen, tapping the first dot goes back")
     lv_obj_clean(lv_screen_active());
     lv_display_delete(lv_display_get_default());
 }
+
+#include "ui/screen_docker.h"
+
+TEST_CASE("docker screen survives hundreds of containers") {
+    DumpBackend b("/tmp");
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    lv_obj_t* tile = lv_obj_create(lv_screen_active());
+    DockerScreen ds;
+    ds.create(tile);
+    Snapshot s;
+    s.docker.ok = true;
+    for (int i = 0; i < 300; ++i)
+        s.docker.containers.push_back({"container-" + std::to_string(i), i % 3 ? "running" : "exited",
+                                       i % 3 ? "Up " + std::to_string(i) + " minutes" : "Exited (1) 1 hour ago"});
+    ds.update(s);
+    pump(100);
+    s.docker.containers[0].status = "Up 999 minutes";  // force a rebuild
+    ds.update(s);
+    pump(100);
+    CHECK(lv_obj_get_child_count(lv_obj_get_child(tile, 1)) >= 300);
+    lv_obj_clean(lv_screen_active());
+    lv_display_delete(lv_display_get_default());
+}
