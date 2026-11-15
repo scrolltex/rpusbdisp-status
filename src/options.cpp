@@ -1,0 +1,67 @@
+#include "options.h"
+
+#include <cstdlib>
+#include <cstring>
+
+namespace status {
+
+const char* usage() {
+    return "usage: rpusbdisp-status [options]\n"
+           "  --backend rpusbdisp|dump|sdl  output (default rpusbdisp)\n"
+           "  --rotate 0|180                screen rotation (default 0)\n"
+           "  --swap-bytes                  swap RGB565 byte order (if colours look wrong)\n"
+           "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
+           "  --docker-socket PATH          default /var/run/docker.sock\n"
+           "  --dump-dir DIR                where the dump backend writes frame.ppm\n"
+           "  --start-tile N                screen shown at start (default 0)\n"
+           "  --help\n";
+}
+
+std::optional<Options> parse_options(int argc, char** argv, std::string& error) {
+    Options o;
+    for (int i = 1; i < argc; ++i) {
+        std::string a = argv[i];
+        auto value = [&](std::string& out) {
+            if (i + 1 >= argc) {
+                error = "missing value for " + a;
+                return false;
+            }
+            out = argv[++i];
+            return true;
+        };
+        std::string v;
+        if (a == "--help" || a == "-h") {
+            o.help = true;
+        } else if (a == "--backend") {
+            if (!value(o.backend)) return std::nullopt;
+            if (o.backend != "rpusbdisp" && o.backend != "dump" && o.backend != "sdl") {
+                error = "unknown backend: " + o.backend;
+                return std::nullopt;
+            }
+        } else if (a == "--rotate") {
+            if (!value(v)) return std::nullopt;
+            if (v != "0" && v != "180") {
+                error = "--rotate must be 0 or 180";
+                return std::nullopt;
+            }
+            o.rotate = std::atoi(v.c_str());
+        } else if (a == "--temp-path") {
+            if (!value(o.temp_path)) return std::nullopt;
+        } else if (a == "--docker-socket") {
+            if (!value(o.docker_socket)) return std::nullopt;
+        } else if (a == "--dump-dir") {
+            if (!value(o.dump_dir)) return std::nullopt;
+        } else if (a == "--swap-bytes") {
+            o.swap_bytes = true;
+        } else if (a == "--start-tile") {
+            if (!value(v)) return std::nullopt;
+            o.start_tile = std::atoi(v.c_str());
+        } else {
+            error = "unknown option: " + a;
+            return std::nullopt;
+        }
+    }
+    return o;
+}
+
+}  // namespace status

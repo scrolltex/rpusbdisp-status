@@ -68,3 +68,8 @@ endif()
 add_executable(hwcheck tools/hwcheck.cpp)
 target_compile_options(hwcheck PRIVATE ${WARN})
 target_link_libraries(hwcheck PRIVATE rpusbdisp_sdk)
+
+# ---- main program --------------------------------------------------------
+add_executable(rpusbdisp-status src/main.cpp)
+target_compile_options(rpusbdisp-status PRIVATE ${WARN})
+target_link_libraries(rpusbdisp-status PRIVATE status_app)
