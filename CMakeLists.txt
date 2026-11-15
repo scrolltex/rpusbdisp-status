@@ -54,3 +54,8 @@ if(STATUS_TESTS)
     target_link_libraries(status_tests PRIVATE status_core rpusbdisp_sdk)
     add_test(NAME status_tests COMMAND status_tests)
 endif()
+
+# ---- hardware check tool -------------------------------------------------
+add_executable(hwcheck tools/hwcheck.cpp)
+target_compile_options(hwcheck PRIVATE ${WARN})
+target_link_libraries(hwcheck PRIVATE rpusbdisp_sdk)
