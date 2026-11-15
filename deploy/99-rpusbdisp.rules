@@ -1,0 +1,2 @@
+# RoboPeak Mini USB Display: allow members of plugdev to use it without root.
+SUBSYSTEM=="usb", ATTR{idVendor}=="fccf", ATTR{idProduct}=="a001", MODE="0660", GROUP="plugdev"

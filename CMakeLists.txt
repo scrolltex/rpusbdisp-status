@@ -73,3 +73,8 @@ target_link_libraries(hwcheck PRIVATE rpusbdisp_sdk)
 add_executable(rpusbdisp-status src/main.cpp)
 target_compile_options(rpusbdisp-status PRIVATE ${WARN})
 target_link_libraries(rpusbdisp-status PRIVATE status_app)
+
+# ---- install -------------------------------------------------------------
+install(TARGETS rpusbdisp-status hwcheck RUNTIME DESTINATION bin)
+install(FILES deploy/status-display.service DESTINATION /etc/systemd/system)
+install(FILES deploy/99-rpusbdisp.rules DESTINATION /etc/udev/rules.d)
