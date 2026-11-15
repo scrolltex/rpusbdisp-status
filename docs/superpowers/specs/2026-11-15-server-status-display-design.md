@@ -146,7 +146,7 @@ rpusbdisp-status/
   (`temp1_input`), иначе `thermal_zone*` с типом `x86_pkg_temp`, иначе
   `thermal_zone0`. Источник можно переопределить аргументом
   `--temp-path`. Если не найдено — показываем «—».
-- Docker — `GET /v1.43/containers/json?all=1` через unix-сокет (без
+- Docker — `GET /containers/json?all=1` (без версии API: Docker 29+ отвергает версии ниже 1.44) через unix-сокет (без
   libcurl), таймаут 2 с на соединение и чтение. Поля: `Names[0]`, `State`,
   `Status`. Сортировка: running сверху, затем по имени. Ошибка доступа к
   сокету → на экране «Docker недоступен: <причина>», остальное работает.

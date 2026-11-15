@@ -1,0 +1,6 @@
+[
+  {"Id":"a1","Names":["/postgres"],"Image":"postgres:16","State":"running","Status":"Up 3 days"},
+  {"Id":"b2","Names":["/backup"],"Image":"restic","State":"exited","Status":"Exited (0) 2 hours ago"},
+  {"Id":"c3","Names":["/nginx"],"Image":"nginx","State":"running","Status":"Up 3 days (healthy)"},
+  {"Id":"d4","Names":["/jellyfin"],"Image":"jellyfin","State":"restarting","Status":"Restarting (1) 5 seconds ago"}
+]
