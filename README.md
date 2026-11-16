@@ -12,8 +12,7 @@ The program starts on Overview and slides back to it after a minute without touc
 - **Overview** (home) — hostname, uptime, CPU, RAM, temperature, network speed
 - **Docker** — running/other counts and a scrollable list of containers (read-only)
 
-![screens](docs/screenshots.png)
-![disks](docs/screenshots-disks.png)
+![Disks, Overview and Docker pages](docs/screenshots.png)
 
 ## Build
 
