@@ -110,7 +110,7 @@ TEST_CASE("read_temp_c converts millidegrees") {
 }
 
 TEST_CASE("default_route_iface picks the UG route with destination 0") {
-    auto i = default_route_iface(read_fixture("net_route.txt"));
+    auto i = default_route_iface(read_fixture("proc/net/route"));
     REQUIRE(i);
     CHECK(*i == "enp3s0");
     CHECK_FALSE(default_route_iface(read_fixture("net_route_nodefault.txt")));
@@ -118,15 +118,15 @@ TEST_CASE("default_route_iface picks the UG route with destination 0") {
 }
 
 TEST_CASE("parse_net_dev reads one interface, ignores docker ones") {
-    auto c = parse_net_dev(read_fixture("net_dev.txt"), "enp3s0");
+    auto c = parse_net_dev(read_fixture("proc/net/dev"), "enp3s0");
     REQUIRE(c);
     CHECK(c->rx_bytes == 123456789);
     CHECK(c->tx_bytes == 98765);
-    auto d = parse_net_dev(read_fixture("net_dev.txt"), "docker0");  // "docker0:5555555" without space
+    auto d = parse_net_dev(read_fixture("proc/net/dev"), "docker0");  // "docker0:5555555" without space
     REQUIRE(d);
     CHECK(d->rx_bytes == 5555555);
-    CHECK_FALSE(parse_net_dev(read_fixture("net_dev.txt"), "eth9"));
-    CHECK_FALSE(parse_net_dev(read_fixture("net_dev.txt"), "enp3"));  // no prefix match
+    CHECK_FALSE(parse_net_dev(read_fixture("proc/net/dev"), "eth9"));
+    CHECK_FALSE(parse_net_dev(read_fixture("proc/net/dev"), "enp3"));  // no prefix match
 }
 
 TEST_CASE("net_rate per second, counter reset gives 0") {

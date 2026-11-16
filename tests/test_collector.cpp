@@ -102,7 +102,7 @@ TEST_CASE("network interface disappearing and coming back") {
     fs::path root = fs::temp_directory_path() / ("status-net-" + std::to_string(::getpid()));
     fs::create_directories(root / "net");
     fs::copy_file(std::string(FIXTURES_DIR) + "/proc/stat", root / "stat", fs::copy_options::overwrite_existing);
-    const std::string route = std::string(FIXTURES_DIR) + "/net_route.txt";
+    const std::string route = std::string(FIXTURES_DIR) + "/proc/net/route";
     auto write_dev = [&](const char* iface, unsigned long rx) {
         std::ofstream(root / "net/dev.tmp") << "Inter-|\n face |\n " << iface << ": " << rx << " 0 0 0 0 0 0 0 1000 0 0 0 0 0 0 0\n";
         fs::rename(root / "net/dev.tmp", root / "net/dev");
@@ -146,7 +146,7 @@ TEST_CASE("default route switching to another interface does not mix counters") 
                       fs::copy_options::overwrite_existing);
         fs::rename(root / "net/route.tmp", root / "net/route");
     };
-    set_route("net_route.txt");  // enp3s0
+    set_route("proc/net/route");  // enp3s0
 
     CollectorConfig cfg;
     cfg.proc_root = root.string();
