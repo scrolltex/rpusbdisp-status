@@ -109,3 +109,35 @@ TEST_CASE("parse_mountstats_nfs uses server read/write bytes") {
     CHECK(b->read_bytes == 5);
     CHECK_FALSE(parse_mountstats_nfs(fixture("disks/mountstats.txt"), "/mnt/none"));
 }
+
+TEST_CASE("parse_smart_json") {
+    auto ok = parse_smart_json(fixture("smart/nvme_ok.json"));
+    CHECK(ok.state == SmartState::Ok);
+    REQUIRE(ok.wear_pct);
+    CHECK(*ok.wear_pct == 3);
+    CHECK(parse_smart_json(fixture("smart/nvme_worn.json")).state == SmartState::Warn);
+    CHECK(parse_smart_json(fixture("smart/nvme_media.json")).state == SmartState::Warn);
+    CHECK(parse_smart_json(fixture("smart/nvme_fail.json")).state == SmartState::Fail);
+    CHECK(parse_smart_json(fixture("smart/nvme_critical.json")).state == SmartState::Fail);
+    auto ata = parse_smart_json(fixture("smart/ata_ok.json"));
+    CHECK(ata.state == SmartState::Ok);
+    CHECK_FALSE(ata.wear_pct);
+    CHECK(parse_smart_json("garbage").state == SmartState::Unknown);
+    CHECK(parse_smart_json("{}").state == SmartState::Unknown);
+    CHECK(parse_smart_json("[1,2]").state == SmartState::Unknown);
+}
+
+TEST_CASE("read_smart: missing file, fresh and stale") {
+    fs::path dir = fs::temp_directory_path() / ("status-smart-" + std::to_string(::getpid()));
+    fs::create_directories(dir);
+    auto now = std::chrono::system_clock::now();
+    CHECK(read_smart(dir.string(), "nvme0", now).state == SmartState::Unknown);
+    fs::copy_file(std::string(FIXTURES_DIR) + "/smart/nvme_ok.json", dir / "nvme0.json");
+    auto fresh = read_smart(dir.string(), "nvme0", std::chrono::system_clock::now());
+    CHECK(fresh.state == SmartState::Ok);
+    CHECK_FALSE(fresh.stale);
+    auto later = read_smart(dir.string(), "nvme0", std::chrono::system_clock::now() + std::chrono::minutes(31));
+    CHECK(later.state == SmartState::Ok);
+    CHECK(later.stale);
+    fs::remove_all(dir);
+}

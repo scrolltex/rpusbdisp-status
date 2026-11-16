@@ -2,6 +2,7 @@
 
 #include "data/snapshot.h"
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -34,6 +35,17 @@ struct IoCounters {
     uint64_t read_bytes = 0;
     uint64_t write_bytes = 0;
 };
+struct SmartInfo {
+    SmartState state = SmartState::Unknown;
+    std::optional<int> wear_pct;  // NVMe percentage_used
+    bool stale = false;           // result file older than 30 min
+};
+// smartctl --json output: FAIL if not passed or critical_warning != 0;
+// WARN if percentage_used >= 90 or media_errors > 0; else OK.
+SmartInfo parse_smart_json(const std::string& json);
+// Reads <dir>/<controller>.json written by the root SMART timer.
+SmartInfo read_smart(const std::string& dir, const std::string& controller, std::chrono::system_clock::time_point now);
+
 std::optional<IoCounters> parse_diskstats(const std::string& text, const std::string& disk);
 std::optional<IoCounters> parse_mountstats_nfs(const std::string& text, const std::string& mount_point);
 

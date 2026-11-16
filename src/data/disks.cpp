@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -145,6 +146,49 @@ std::optional<std::string> find_disk_temp_input(const BlockDev& d, const std::st
             if (fs::exists(h / "temp1_input", ec)) return (h / "temp1_input").string();
     }
     return std::nullopt;
+}
+
+SmartInfo parse_smart_json(const std::string& text) {
+    SmartInfo r;
+    auto j = nlohmann::json::parse(text, nullptr, false);
+    if (j.is_discarded() || !j.is_object()) return r;
+    auto num = [](const nlohmann::json& o, const char* k) -> std::optional<long long> {
+        if (o.is_object() && o.contains(k) && o[k].is_number_integer()) return o[k].get<long long>();
+        return std::nullopt;
+    };
+    std::optional<bool> passed;
+    if (j.contains("smart_status") && j["smart_status"].is_object() && j["smart_status"].contains("passed") &&
+        j["smart_status"]["passed"].is_boolean())
+        passed = j["smart_status"]["passed"].get<bool>();
+    const nlohmann::json nvme = j.contains("nvme_smart_health_information_log")
+                                    ? j["nvme_smart_health_information_log"]
+                                    : nlohmann::json::object();
+    auto critical = num(nvme, "critical_warning");
+    auto used = num(nvme, "percentage_used");
+    auto media = num(nvme, "media_errors");
+    if (!passed && !critical) return r;  // nothing we can judge
+
+    if (used) r.wear_pct = int(*used);
+    if ((passed && !*passed) || (critical && *critical != 0)) r.state = SmartState::Fail;
+    else if ((used && *used >= 90) || (media && *media > 0)) r.state = SmartState::Warn;
+    else r.state = SmartState::Ok;
+    return r;
+}
+
+SmartInfo read_smart(const std::string& dir, const std::string& controller, std::chrono::system_clock::time_point now) {
+    const fs::path p = fs::path(dir) / (controller + ".json");
+    std::ifstream f(p);
+    if (!f) return {};
+    SmartInfo r = parse_smart_json(std::string(std::istreambuf_iterator<char>(f), {}));
+    std::error_code ec;
+    auto mtime = fs::last_write_time(p, ec);
+    if (!ec) {
+        // file_clock -> system_clock (C++17: via the difference to "now" on each clock)
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(fs::file_time_type::clock::now() - mtime) +
+                   std::chrono::duration_cast<std::chrono::seconds>(now - std::chrono::system_clock::now());
+        r.stale = age > std::chrono::minutes(30);
+    }
+    return r;
 }
 
 std::optional<IoCounters> parse_diskstats(const std::string& text, const std::string& disk) {

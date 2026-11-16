@@ -12,6 +12,8 @@ struct MemInfo {
     uint64_t available_kb = 0;
 };
 
+enum class SmartState { Unknown, Ok, Warn, Fail };
+
 struct NetRate {
     double rx_bps = 0;  // bytes per second received
     double tx_bps = 0;  // bytes per second sent
