@@ -11,7 +11,15 @@ namespace status {
 class App {
 public:
     void add(std::unique_ptr<Screen> s);
-    void create(int start_tile = 0);
+    // Page that is shown at start and returned to after inactivity.
+    void set_home(int index) { home_ = index; }
+    int home() const { return home_; }
+    // Page offsets are relative to home: <0 left, 0 home, >0 right.
+    bool valid_offset(int offset) const;
+    void create(int start_offset = 0);
+    // Slides back to home once the screen has not been touched for 60 s.
+    void check_idle(uint32_t inactive_ms);
+    static constexpr uint32_t kIdleReturnMs = 60000;
     void update(const Snapshot& s);
     void show(int index, bool animate);
     int current() const { return current_; }
@@ -26,6 +34,7 @@ private:
     std::vector<lv_obj_t*> tiles_;
     std::vector<lv_obj_t*> dots_;
     int current_ = 0;
+    int home_ = 0;
 };
 
 }  // namespace status

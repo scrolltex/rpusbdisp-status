@@ -22,7 +22,7 @@ TEST_CASE("defaults") {
     CHECK(o->rotate == 0);
     CHECK(o->docker_socket == "/var/run/docker.sock");
     CHECK_FALSE(o->swap_bytes);
-    CHECK(o->start_tile == 0);
+    CHECK(o->start_page == 0);
     CHECK(o->bgr);  // RoboPeak display is BGR565
     CHECK(o->coalesce);
     CHECK(o->fps == 16);
@@ -57,7 +57,7 @@ TEST_CASE("color order") {
 TEST_CASE("all options") {
     std::string err;
     auto o = parse({"--backend", "dump", "--dump-dir", "/tmp", "--rotate", "180", "--temp-path", "/t",
-                    "--docker-socket", "/d.sock", "--swap-bytes", "--start-tile", "1"},
+                    "--docker-socket", "/d.sock", "--swap-bytes", "--start-page", "-1"},
                    err);
     REQUIRE(o);
     CHECK(o->backend == "dump");
@@ -66,7 +66,7 @@ TEST_CASE("all options") {
     CHECK(o->temp_path == "/t");
     CHECK(o->docker_socket == "/d.sock");
     CHECK(o->swap_bytes);
-    CHECK(o->start_tile == 1);
+    CHECK(o->start_page == -1);
 }
 
 TEST_CASE("rotate must be 0 or 180") {
@@ -98,4 +98,9 @@ TEST_CASE("net-iface") {
     auto o = parse({"--net-iface", "eth1"}, err);
     REQUIRE(o);
     CHECK(o->net_iface == "eth1");
+}
+
+TEST_CASE("start-tile is gone") {
+    std::string err;
+    CHECK_FALSE(parse({"--start-tile", "1"}, err));
 }

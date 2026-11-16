@@ -6,7 +6,16 @@ namespace status {
 
 void App::add(std::unique_ptr<Screen> s) { screens_.push_back(std::move(s)); }
 
-void App::create(int start_tile) {
+bool App::valid_offset(int offset) const {
+    const int i = home_ + offset;
+    return i >= 0 && i < int(screens_.size());
+}
+
+void App::check_idle(uint32_t inactive_ms) {
+    if (inactive_ms >= kIdleReturnMs && current_ != home_) show(home_, true);
+}
+
+void App::create(int start_offset) {
     lv_display_t* disp = lv_display_get_default();
     lv_theme_t* th = lv_theme_default_init(disp, lv_color_hex(0x3498DB), lv_color_hex(0x2ECC71), true,
                                            &lv_font_montserrat_14);
@@ -59,8 +68,7 @@ void App::create(int start_tile) {
         dots_.push_back(dot);
     }
 
-    if (start_tile < 0 || start_tile >= n) start_tile = 0;
-    show(start_tile, false);
+    show(valid_offset(start_offset) ? home_ + start_offset : home_, false);
 }
 
 void App::show(int index, bool animate) {

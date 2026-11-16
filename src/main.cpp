@@ -34,6 +34,7 @@ struct UiCtx {
 static void ui_timer_cb(lv_timer_t* t) {
     auto* ctx = static_cast<UiCtx*>(lv_timer_get_user_data(t));
     ctx->app->update(ctx->collector->snapshot());
+    ctx->app->check_idle(lv_display_get_inactive_time(nullptr));
 }
 
 int main(int argc, char** argv) {
@@ -80,7 +81,11 @@ int main(int argc, char** argv) {
     App app;
     app.add(std::make_unique<OverviewScreen>());
     app.add(std::make_unique<DockerScreen>());
-    app.create(opt->start_tile);
+    if (!app.valid_offset(opt->start_page)) {
+        std::fprintf(stderr, "--start-page %d is out of range\n", opt->start_page);
+        return 2;
+    }
+    app.create(opt->start_page);
     app.update(collector.snapshot());
 
     UiCtx ctx{&app, &collector};

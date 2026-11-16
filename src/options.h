@@ -16,7 +16,7 @@ struct Options {
     bool coalesce = true;
     int fps = 16;  // max display updates per second (0 = unlimited)  // one blit per refresh instead of one per area
     bool bgr = true;  // RoboPeak display expects BGR565
-    int start_tile = 0;
+    int start_page = 0;  // relative to the home page: <0 left, >0 right
     bool help = false;
 };
 

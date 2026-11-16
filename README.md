@@ -58,7 +58,7 @@ sudo ./build/rpusbdisp-status                       # on the display
 ```
 
 Options: `--rotate 0|180`, `--net-iface NAME` (NET speed interface, default: default route), `--fps N` (display updates per second, default 16), `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
-auto-detected by default), `--docker-socket PATH`, `--start-tile N`.
+auto-detected by default), `--docker-socket PATH`, `--start-page N` (relative to the home page: -1 Disks, 0 Overview, 1 Docker).
 
 ## Install as a service
 

@@ -17,7 +17,8 @@ const char* usage() {
            "  --net-iface NAME              interface for NET speed (default: default route)\n"
            "  --docker-socket PATH          default /var/run/docker.sock\n"
            "  --dump-dir DIR                where the dump backend writes frame.ppm\n"
-           "  --start-tile N                screen shown at start (default 0)\n"
+           "  --start-page N                page shown at start, relative to home:\n"
+           "                                -1 Disks, 0 Overview (default), 1 Docker\n"
            "  --help\n";
 }
 
@@ -77,9 +78,15 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
             o.coalesce = false;
         } else if (a == "--swap-bytes") {
             o.swap_bytes = true;
-        } else if (a == "--start-tile") {
+        } else if (a == "--start-page") {
             if (!value(v)) return std::nullopt;
-            o.start_tile = std::atoi(v.c_str());
+            char* end = nullptr;
+            long n = std::strtol(v.c_str(), &end, 10);
+            if (v.empty() || *end != '\0' || n < -100 || n > 100) {
+                error = "--start-page must be a number (relative to home, e.g. -1, 0, 1)";
+                return std::nullopt;
+            }
+            o.start_page = int(n);
         } else {
             error = "unknown option: " + a;
             return std::nullopt;

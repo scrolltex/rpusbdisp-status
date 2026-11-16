@@ -25,7 +25,7 @@ The `dump` backend runs the same flush path as the real display and writes
 `<dir>/frame.ppm` about once a second:
 
 ```bash
-./build/rpusbdisp-status --backend dump --dump-dir /tmp/d --start-tile 1 --rotate 180
+./build/rpusbdisp-status --backend dump --dump-dir /tmp/d --start-page 1 --rotate 180
 ```
 
 Convert the PPM to PNG to look at it. For the Docker screen, serve a fake

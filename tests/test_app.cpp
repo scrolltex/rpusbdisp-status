@@ -75,3 +75,45 @@ TEST_CASE("docker screen survives hundreds of containers") {
     lv_obj_clean(lv_screen_active());
     lv_display_delete(lv_display_get_default());
 }
+
+TEST_CASE("home page in the middle, relative start, auto-return after 60 s") {
+    DumpBackend b("/tmp");
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    App app;
+    app.add(std::make_unique<DummyScreen>());
+    app.add(std::make_unique<DummyScreen>());
+    app.add(std::make_unique<DummyScreen>());
+    app.set_home(1);
+    CHECK(app.valid_offset(-1));
+    CHECK(app.valid_offset(1));
+    CHECK_FALSE(app.valid_offset(2));
+    CHECK_FALSE(app.valid_offset(-2));
+    app.create(-1);
+    pump(100);
+    CHECK(app.current() == 0);
+
+    app.check_idle(59999);
+    pump(600);
+    CHECK(app.current() == 0);
+    app.check_idle(60000);
+    pump(600);
+    CHECK(app.current() == 1);
+
+    lv_obj_clean(lv_screen_active());
+    lv_display_delete(lv_display_get_default());
+}
+
+TEST_CASE("default start is the home page") {
+    DumpBackend b("/tmp");
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    App app;
+    app.add(std::make_unique<DummyScreen>());
+    app.add(std::make_unique<DummyScreen>());
+    app.add(std::make_unique<DummyScreen>());
+    app.set_home(1);
+    app.create();
+    pump(100);
+    CHECK(app.current() == 1);
+    lv_obj_clean(lv_screen_active());
+    lv_display_delete(lv_display_get_default());
+}
