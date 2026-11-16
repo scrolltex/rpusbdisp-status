@@ -57,7 +57,7 @@ sudo ./build/rpusbdisp-status                       # on the display
 ./build/rpusbdisp-status --help
 ```
 
-Options: `--rotate 0|180`, `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
+Options: `--rotate 0|180`, `--fps N` (display updates per second, default 16), `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
 auto-detected by default), `--docker-socket PATH`, `--start-tile N`.
 
 ## Install as a service

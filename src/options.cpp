@@ -10,6 +10,7 @@ const char* usage() {
            "  --backend rpusbdisp|dump|sdl  output (default rpusbdisp)\n"
            "  --rotate 0|180                screen rotation (default 0)\n"
            "  --color-order bgr|rgb         display colour order (default bgr; rpusbdisp only)\n"
+           "  --fps N                       max display updates per second (default 16, 0 = unlimited)\n"
            "  --no-coalesce                 send every redrawn area separately (debugging)\n"
            "  --swap-bytes                  swap the two bytes of each pixel (if colours are garbled)\n"
            "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
@@ -60,6 +61,15 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
                 return std::nullopt;
             }
             o.bgr = v == "bgr";
+        } else if (a == "--fps") {
+            if (!value(v)) return std::nullopt;
+            char* end = nullptr;
+            long n = std::strtol(v.c_str(), &end, 10);
+            if (v.empty() || *end != '\0' || n < 0 || n > 1000) {
+                error = "--fps must be a number 0..1000";
+                return std::nullopt;
+            }
+            o.fps = int(n);
         } else if (a == "--no-coalesce") {
             o.coalesce = false;
         } else if (a == "--swap-bytes") {

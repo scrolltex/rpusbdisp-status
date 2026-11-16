@@ -72,16 +72,25 @@ void PartialBackend::flush_cb(lv_display_t* d, const lv_area_t* area, uint8_t* p
         self->have_dirty_ = true;
     }
 
-    if (lv_display_flush_is_last(d)) {
-        const lv_area_t a = self->dirty_;
-        const int32_t dw = lv_area_get_width(&a), dh = lv_area_get_height(&a);
-        for (int32_t row = 0; row < dh; ++row)
-            std::memcpy(&self->frame_[size_t(row) * dw], &self->shadow_[size_t(a.y1 + row) * kWidth + size_t(a.x1)],
-                        size_t(dw) * 2);
-        self->blit(a.x1, a.y1, dw, dh, self->frame_.data());
-        self->have_dirty_ = false;
-    }
+    if (lv_display_flush_is_last(d)) self->flush_pending();
     lv_display_flush_ready(d);
+}
+
+void PartialBackend::flush_pending() {
+    if (!have_dirty_) return;
+    if (blitted_once_ && lv_tick_elaps(last_blit_tick_) < min_interval_ms_) return;
+    send_dirty();
+}
+
+void PartialBackend::send_dirty() {
+    const lv_area_t a = dirty_;
+    const int32_t dw = lv_area_get_width(&a), dh = lv_area_get_height(&a);
+    for (int32_t row = 0; row < dh; ++row)
+        std::memcpy(&frame_[size_t(row) * dw], &shadow_[size_t(a.y1 + row) * kWidth + size_t(a.x1)], size_t(dw) * 2);
+    have_dirty_ = false;
+    last_blit_tick_ = lv_tick_get();
+    blitted_once_ = true;
+    blit(a.x1, a.y1, dw, dh, frame_.data());
 }
 
 void PartialBackend::set_touch(int32_t x, int32_t y, bool pressed) {

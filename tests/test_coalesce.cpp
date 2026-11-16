@@ -81,3 +81,45 @@ TEST_CASE("coalescing sends one blit per frame, same picture as without") {
     CHECK(one.fb[15 * 320 + 15] == 0xF800);   // red box (RGB565, bgr off by default in backend)
     CHECK(one.fb[225 * 320 + 305] == 0x07E0); // green box
 }
+
+#include <thread>
+
+TEST_CASE("frame rate limit: rapid changes are batched, the last state still arrives") {
+    std::vector<uint16_t> fb(320 * 240, 0);
+    int blits = 0;
+    RpUsbDispBackend b([&](RpUsbDispBackend::TouchCallback) { return std::make_unique<Recorder>(&fb, &blits); },
+                       50ms);
+    b.set_max_fps(10);  // at most one blit per 100 ms
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_black(), 0);
+    lv_obj_t* a = box(10, 10, 0x000000);
+    for (int i = 0; i < 20; ++i) {  // first frame + settle
+        lv_tick_inc(10);
+        lv_timer_handler();
+        b.poll();
+        std::this_thread::sleep_for(10ms);
+    }
+
+    blits = 0;
+    // ~300 ms of changes every 10 ms (like scrolling at full LVGL frame rate)
+    for (int i = 0; i < 30; ++i) {
+        lv_obj_set_style_bg_color(a, lv_color_hex(i % 2 ? 0x0000FF : 0x00FF00), 0);
+        lv_tick_inc(10);
+        lv_timer_handler();
+        b.poll();
+        std::this_thread::sleep_for(10ms);
+    }
+    lv_obj_set_style_bg_color(a, lv_color_hex(0xFF0000), 0);
+    for (int i = 0; i < 20; ++i) {  // 200 ms idle: pending frame must be sent by poll()
+        lv_tick_inc(10);
+        lv_timer_handler();
+        b.poll();
+        std::this_thread::sleep_for(10ms);
+    }
+    CHECK(blits >= 3);
+    CHECK(blits <= 7);
+    CHECK(fb[15 * 320 + 15] == 0xF800);
+
+    lv_obj_clean(lv_screen_active());
+    lv_display_delete(lv_display_get_default());
+}

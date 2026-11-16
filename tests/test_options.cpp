@@ -25,6 +25,17 @@ TEST_CASE("defaults") {
     CHECK(o->start_tile == 0);
     CHECK(o->bgr);  // RoboPeak display is BGR565
     CHECK(o->coalesce);
+    CHECK(o->fps == 16);
+}
+
+TEST_CASE("fps") {
+    std::string err;
+    auto o = parse({"--fps", "10"}, err);
+    REQUIRE(o);
+    CHECK(o->fps == 10);
+    CHECK(parse({"--fps", "0"}, err));
+    CHECK_FALSE(parse({"--fps", "-1"}, err));
+    CHECK_FALSE(parse({"--fps", "abc"}, err));
 }
 
 TEST_CASE("no-coalesce") {

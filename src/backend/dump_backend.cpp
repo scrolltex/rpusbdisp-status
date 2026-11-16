@@ -30,6 +30,7 @@ bool DumpBackend::write_ppm(const std::string& path) const {
 }
 
 void DumpBackend::poll() {
+    flush_pending();
     auto now = std::chrono::steady_clock::now();
     if (!dirty_ || now < next_dump_) return;
     next_dump_ = now + std::chrono::seconds(1);

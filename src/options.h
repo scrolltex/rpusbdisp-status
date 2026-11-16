@@ -12,7 +12,8 @@ struct Options {
     std::string docker_socket = "/var/run/docker.sock";
     std::string dump_dir = ".";
     bool swap_bytes = false;
-    bool coalesce = true;  // one blit per refresh instead of one per area
+    bool coalesce = true;
+    int fps = 16;  // max display updates per second (0 = unlimited)  // one blit per refresh instead of one per area
     bool bgr = true;  // RoboPeak display expects BGR565
     int start_tile = 0;
     bool help = false;

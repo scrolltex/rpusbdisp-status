@@ -25,6 +25,9 @@ public:
     // and push their bounding box as a single blit (like the kernel driver),
     // instead of one blit per area.
     void set_coalesce(bool v) { coalesce_ = v; }
+    // Upper bound for blits per second while coalescing (0 = unlimited).
+    // Changes made in between are kept and sent by the next blit or poll().
+    void set_max_fps(int fps) { min_interval_ms_ = fps > 0 ? uint32_t(1000 / fps) : 0; }
 
 protected:
     // Push w*h tightly packed RGB565 pixels to physical position (x, y).
@@ -34,6 +37,9 @@ protected:
     // Physical touch state, callable from any thread.
     void set_touch(int32_t x, int32_t y, bool pressed);
     void invalidate_all();
+    // Sends a pending coalesced frame if the frame interval has passed.
+    // Derived backends call this from poll().
+    void flush_pending();
 
     lv_display_t* disp_ = nullptr;
 
@@ -48,6 +54,10 @@ private:
     std::vector<uint16_t> frame_;   // contiguous copy of the dirty box
     lv_area_t dirty_{0, 0, -1, -1};
     bool have_dirty_ = false;
+    uint32_t min_interval_ms_ = 1000 / 16;  // kernel driver default: 16 fps
+    uint32_t last_blit_tick_ = 0;            // LVGL tick (ms)
+    bool blitted_once_ = false;
+    void send_dirty();
     lv_indev_t* indev_ = nullptr;
     std::vector<uint16_t> tmp_;
     std::mutex touch_mu_;

@@ -92,6 +92,7 @@ void RpUsbDispBackend::drop(const char* why) {
 }
 
 void RpUsbDispBackend::poll() {
+    flush_pending();
     if (dev_) {
         if (blit_failed_) drop("display not responding, reconnecting");
         else if (!dev_->alive()) drop("display disconnected");
