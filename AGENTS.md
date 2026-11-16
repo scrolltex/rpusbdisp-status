@@ -45,7 +45,8 @@ src/backend   PartialBackend (LVGL display, rotation, colour conversion,
 src/ui        App (tileview pager + dots), screens, format/theme helpers
 tools/hwcheck hardware check without LVGL
 deploy        systemd unit, udev rule, install.sh
-docs/superpowers  design specs and implementation plans, one pair per feature
+docs/design   design records, one per feature (why it is built this way)
+docs/known-issues.md  open findings from reviews
 third_party   lvgl, rpusbdisp (submodules); nlohmann/json, doctest (vendored)
 ```
 
@@ -103,8 +104,15 @@ change containers.
 
 - TDD: write the failing test, watch it fail, then implement. When a test can
   only be written after the code, prove it by breaking the code once (mutation).
-- Larger features: design spec in `docs/superpowers/specs/`, plan in
-  `docs/superpowers/plans/`, agreed with the human you work for before coding.
+- Larger features: write a design record `docs/design/YYYY-MM-DD-<topic>.md`
+  (why, goals/non-goals, approaches considered and the chosen one, decisions)
+  and agree it with the human you work for before coding. Commit it.
+- Implementation plans and task checklists are working files: keep them under
+  the git-ignored `.superpowers/` (or delete them when done), never commit them.
+  They go stale as soon as the code changes; the design record and git history
+  are the durable record.
+- Findings you decide not to fix go to `docs/known-issues.md`; remove an entry
+  when it is fixed.
 - Hardware-related bugs: find the root cause before fixing (compare with the
   kernel driver in `third_party/rpusbdisp/drivers/linux-driver`).
 
