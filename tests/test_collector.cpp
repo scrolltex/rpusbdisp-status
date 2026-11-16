@@ -60,3 +60,34 @@ TEST_CASE("destructor stops a running collector") {
     }
     CHECK(std::chrono::steady_clock::now() - t0 < 500ms);
 }
+
+TEST_CASE("collector reports network speed of the default-route interface") {
+    CollectorConfig cfg;
+    cfg.proc_root = std::string(FIXTURES_DIR) + "/proc";
+    cfg.sysfs_root = "/nonexistent-sys";
+    cfg.docker_socket = "/nonexistent/docker.sock";
+    cfg.sys_period = 50ms;
+    cfg.docker_period = 1000ms;
+    Collector c(cfg);
+    c.start();
+    std::this_thread::sleep_for(200ms);
+    auto n = c.snapshot().sys.net;
+    CHECK(n.ok);
+    CHECK(n.iface == "enp3s0");
+    CHECK(n.rate.rx_bps == 0);  // static fixture counters
+    CHECK(n.rate.tx_bps == 0);
+}
+
+TEST_CASE("collector with a missing interface reports no network rate") {
+    CollectorConfig cfg;
+    cfg.proc_root = std::string(FIXTURES_DIR) + "/proc";
+    cfg.sysfs_root = "/nonexistent-sys";
+    cfg.docker_socket = "/nonexistent/docker.sock";
+    cfg.net_iface = "nope0";
+    cfg.sys_period = 50ms;
+    cfg.docker_period = 1000ms;
+    Collector c(cfg);
+    c.start();
+    std::this_thread::sleep_for(200ms);
+    CHECK_FALSE(c.snapshot().sys.net.ok);
+}

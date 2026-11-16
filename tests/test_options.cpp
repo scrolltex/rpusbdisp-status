@@ -89,3 +89,13 @@ TEST_CASE("help") {
     REQUIRE(o);
     CHECK(o->help);
 }
+
+TEST_CASE("net-iface") {
+    std::string err;
+    auto d = parse({}, err);
+    REQUIRE(d);
+    CHECK(d->net_iface.empty());
+    auto o = parse({"--net-iface", "eth1"}, err);
+    REQUIRE(o);
+    CHECK(o->net_iface == "eth1");
+}

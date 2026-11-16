@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
     CollectorConfig cc;
     cc.temp_path = opt->temp_path;
     cc.docker_socket = opt->docker_socket;
+    cc.net_iface = opt->net_iface;
     Collector collector(cc);
     collector.start();
 

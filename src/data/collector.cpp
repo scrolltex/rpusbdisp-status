@@ -61,6 +61,9 @@ bool Collector::wait_for(std::chrono::milliseconds d) {
 
 void Collector::run_system() {
     std::optional<CpuTimes> prev;
+    std::string net_prev_iface;
+    std::optional<NetCounters> net_prev;
+    std::chrono::steady_clock::time_point net_prev_time;
     std::string temp_path = cfg_.temp_path;
     if (temp_path.empty()) {
         if (auto t = find_temp_source(cfg_.sysfs_root)) temp_path = *t;
@@ -74,6 +77,23 @@ void Collector::run_system() {
         if (auto m = parse_meminfo(slurp(cfg_.proc_root + "/meminfo"))) s.mem = *m;
         if (auto u = parse_uptime(slurp(cfg_.proc_root + "/uptime"))) s.uptime_s = *u;
         if (!temp_path.empty()) s.temp_c = read_temp_c(temp_path);
+
+        // Network: resolved every sample so route changes / late interfaces are picked up.
+        std::optional<std::string> iface;
+        if (!cfg_.net_iface.empty()) iface = cfg_.net_iface;
+        else iface = default_route_iface(slurp(cfg_.proc_root + "/net/route"));
+        std::optional<NetCounters> counters;
+        if (iface) counters = parse_net_dev(slurp(cfg_.proc_root + "/net/dev"), *iface);
+        const auto now = std::chrono::steady_clock::now();
+        if (counters && net_prev && *iface == net_prev_iface) {
+            s.net.ok = true;
+            s.net.iface = *iface;
+            s.net.rate = net_rate(*net_prev, *counters,
+                                  std::chrono::duration<double>(now - net_prev_time).count());
+        }
+        net_prev = counters;
+        net_prev_iface = iface ? *iface : std::string();
+        net_prev_time = now;
 
         std::lock_guard<std::mutex> lk(mu_);
         snap_.sys = std::move(s);

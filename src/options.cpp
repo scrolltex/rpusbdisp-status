@@ -14,6 +14,7 @@ const char* usage() {
            "  --no-coalesce                 send every redrawn area separately (debugging)\n"
            "  --swap-bytes                  swap the two bytes of each pixel (if colours are garbled)\n"
            "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
+           "  --net-iface NAME              interface for NET speed (default: default route)\n"
            "  --docker-socket PATH          default /var/run/docker.sock\n"
            "  --dump-dir DIR                where the dump backend writes frame.ppm\n"
            "  --start-tile N                screen shown at start (default 0)\n"
@@ -50,6 +51,8 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
             o.rotate = std::atoi(v.c_str());
         } else if (a == "--temp-path") {
             if (!value(o.temp_path)) return std::nullopt;
+        } else if (a == "--net-iface") {
+            if (!value(o.net_iface)) return std::nullopt;
         } else if (a == "--docker-socket") {
             if (!value(o.docker_socket)) return std::nullopt;
         } else if (a == "--dump-dir") {

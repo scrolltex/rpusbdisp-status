@@ -15,6 +15,7 @@ struct CollectorConfig {
     std::string sysfs_root = "/sys";
     std::string temp_path;  // empty: auto-detect under sysfs_root
     std::string docker_socket = "/var/run/docker.sock";
+    std::string net_iface;  // empty: interface of the default route
     std::chrono::milliseconds sys_period{1000};
     std::chrono::milliseconds docker_period{5000};
 };

@@ -10,6 +10,7 @@ struct Options {
     int rotate = 0;
     std::string temp_path;
     std::string docker_socket = "/var/run/docker.sock";
+    std::string net_iface;  // empty: auto (default route)
     std::string dump_dir = ".";
     bool swap_bytes = false;
     bool coalesce = true;
