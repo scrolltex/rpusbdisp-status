@@ -122,3 +122,19 @@ tools         hwcheck
 deploy        systemd unit, udev rule, install script
 third_party   lvgl, rpusbdisp (submodules), nlohmann/json, doctest
 ```
+
+## License
+
+Copyright (C) 2026 Danil Kalashnikov
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE).
+
+The program statically links the RoboPeak usermode SDK
+([scrolltex/rpusbdisp](https://github.com/scrolltex/rpusbdisp), GPL v2), which
+is why the whole program is GPL. Bundled third-party code keeps its own
+license: [LVGL](https://github.com/lvgl/lvgl) (MIT),
+[nlohmann/json](https://github.com/nlohmann/json) (MIT) and
+[doctest](https://github.com/doctest/doctest) (MIT).
