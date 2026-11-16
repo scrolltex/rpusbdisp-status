@@ -53,3 +53,18 @@ TEST_CASE("short_status trims Docker status text") {
     CHECK(short_status("Restarting (1) 5 seconds ago") == "Restarting");
     CHECK(short_status("Created") == "Created");
 }
+
+TEST_CASE("format_rate") {
+    CHECK(format_rate(0) == "0 B/s");
+    CHECK(format_rate(512) == "512 B/s");
+    CHECK(format_rate(1536) == "1.5 KB/s");
+    CHECK(format_rate(120 * 1024) == "120 KB/s");
+    CHECK(format_rate(1.2 * 1024 * 1024) == "1.2 MB/s");
+    CHECK(format_rate(1.5 * 1024 * 1024 * 1024) == "1.5 GB/s");
+}
+
+TEST_CASE("net_active threshold is 10 KB/s in either direction") {
+    CHECK(net_active({10240, 0}));
+    CHECK(net_active({0, 20000}));
+    CHECK_FALSE(net_active({10239, 10239}));
+}

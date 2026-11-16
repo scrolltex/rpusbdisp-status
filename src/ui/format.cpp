@@ -45,6 +45,24 @@ std::string format_bytes_kb(uint64_t kb) {
     return buf;
 }
 
+std::string format_rate(double bps) {
+    static const char* units[] = {"B/s", "KB/s", "MB/s", "GB/s"};
+    int u = 0;
+    while (bps >= 1024.0 && u < 3) {
+        bps /= 1024.0;
+        ++u;
+    }
+    char buf[32];
+    if (u == 0 || bps >= 100.0) std::snprintf(buf, sizeof(buf), "%.0f %s", bps, units[u]);
+    else std::snprintf(buf, sizeof(buf), "%.1f %s", bps, units[u]);
+    return buf;
+}
+
+bool net_active(const NetRate& r) {
+    const double threshold = 10.0 * 1024.0;
+    return r.rx_bps >= threshold || r.tx_bps >= threshold;
+}
+
 namespace {
 
 std::string unit_suffix(const std::string& unit) {

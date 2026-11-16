@@ -23,6 +23,7 @@ private:
     lv_obj_t* uptime_ = nullptr;
     Meter cpu_, ram_;
     lv_obj_t* temp_ = nullptr;
+    lv_obj_t* net_ = nullptr;
 };
 
 }  // namespace status

@@ -47,6 +47,10 @@ void OverviewScreen::create(lv_obj_t* parent) {
     lv_obj_set_style_pad_top(t, 4, 0);
     label(t, &lv_font_montserrat_14, color_dim(), "TEMP");
     temp_ = label(t, &lv_font_montserrat_28, color_text(), "--");
+
+    lv_obj_t* n = row(parent);
+    label(n, &lv_font_montserrat_14, color_dim(), "NET");
+    net_ = label(n, &lv_font_montserrat_20, color_dim(), "--");
 }
 
 OverviewScreen::Meter OverviewScreen::make_meter(lv_obj_t* parent, const char* title) {
@@ -103,6 +107,16 @@ void OverviewScreen::update(const Snapshot& s) {
     } else {
         lv_label_set_text(temp_, "--");
         lv_obj_set_style_text_color(temp_, color_dim(), 0);
+    }
+
+    if (s.sys.net.ok) {
+        const auto& r = s.sys.net.rate;
+        std::string text = LV_SYMBOL_DOWN " " + format_rate(r.rx_bps) + "   " LV_SYMBOL_UP " " + format_rate(r.tx_bps);
+        lv_label_set_text(net_, text.c_str());
+        lv_obj_set_style_text_color(net_, net_active(r) ? color_text() : color_dim(), 0);
+    } else {
+        lv_label_set_text(net_, "--");
+        lv_obj_set_style_text_color(net_, color_dim(), 0);
     }
 }
 

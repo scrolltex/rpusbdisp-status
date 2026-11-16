@@ -6,7 +6,7 @@ built with [LVGL](https://lvgl.io) on top of the usermode SDK from
 
 Two pages, switched by swiping left/right or tapping the dots at the bottom:
 
-- **Overview** — hostname, uptime, CPU, RAM, temperature
+- **Overview** — hostname, uptime, CPU, RAM, temperature, network speed
 - **Docker** — running/other counts and a scrollable list of containers (read-only)
 
 ![screens](docs/screenshots.png)
@@ -57,7 +57,7 @@ sudo ./build/rpusbdisp-status                       # on the display
 ./build/rpusbdisp-status --help
 ```
 
-Options: `--rotate 0|180`, `--fps N` (display updates per second, default 16), `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
+Options: `--rotate 0|180`, `--net-iface NAME` (NET speed interface, default: default route), `--fps N` (display updates per second, default 16), `--color-order bgr|rgb` (default bgr), `--swap-bytes`, `--temp-path FILE` (millidegrees,
 auto-detected by default), `--docker-socket PATH`, `--start-tile N`.
 
 ## Install as a service
