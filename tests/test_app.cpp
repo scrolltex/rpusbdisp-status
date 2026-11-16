@@ -117,3 +117,46 @@ TEST_CASE("default start is the home page") {
     lv_obj_clean(lv_screen_active());
     lv_display_delete(lv_display_get_default());
 }
+
+#include "ui/screen_disks.h"
+
+namespace {
+DiskInfo disk_row(const std::string& mp, bool nfs, bool available) {
+    DiskInfo d;
+    d.mount_point = mp;
+    d.nfs = nfs;
+    d.available = available;
+    d.total = 1000;
+    d.used = 500;
+    if (!nfs) {
+        d.device = "nvme0";
+        d.temp_c = 48;
+        d.smart = SmartState::Ok;
+        d.wear_pct = 3;
+        d.io = NetRate{1024, 0};
+    }
+    return d;
+}
+}  // namespace
+
+TEST_CASE("disks screen: many rows, unavailable NFS row has no bar") {
+    DumpBackend b("/tmp");
+    REQUIRE(b.init(LV_DISPLAY_ROTATION_0));
+    lv_obj_t* tile = lv_obj_create(lv_screen_active());
+    DisksScreen ds;
+    ds.create(tile);
+    Snapshot s;
+    for (int i = 0; i < 40; ++i) s.sys.disks.push_back(disk_row("/mnt/d" + std::to_string(i), false, true));
+    ds.update(s);
+    pump(100);
+    CHECK(ds.row_count() == 40);
+
+    s.sys.disks = {disk_row("/", false, true), disk_row("/mnt/backup", true, false)};
+    ds.update(s);
+    pump(100);
+    CHECK(ds.row_count() == 2);
+    CHECK(ds.row_has_bar(0));
+    CHECK_FALSE(ds.row_has_bar(1));
+    lv_obj_clean(lv_screen_active());
+    lv_display_delete(lv_display_get_default());
+}

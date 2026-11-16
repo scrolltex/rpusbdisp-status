@@ -68,3 +68,21 @@ TEST_CASE("net_active threshold is 10 KB/s in either direction") {
     CHECK(net_active({0, 20000}));
     CHECK_FALSE(net_active({10239, 10239}));
 }
+
+TEST_CASE("disk levels") {
+    CHECK(level_disk_pct(79.9) == Level::Ok);
+    CHECK(level_disk_pct(80) == Level::Warn);
+    CHECK(level_disk_pct(90) == Level::Warn);
+    CHECK(level_disk_pct(90.1) == Level::Crit);
+    CHECK(level_disk_temp(59.9) == Level::Ok);
+    CHECK(level_disk_temp(60) == Level::Warn);
+    CHECK(level_disk_temp(70) == Level::Warn);
+    CHECK(level_disk_temp(70.5) == Level::Crit);
+}
+
+TEST_CASE("format_size") {
+    CHECK(format_size(499289948160ull) == "465G");
+    CHECK(format_size(uint64_t(3.5 * 1024 * 1024 * 1024 * 1024)) == "3.5T");
+    CHECK(format_size(512ull * 1024 * 1024) == "512M");
+    CHECK(format_size(uint64_t(6.5 * 1024 * 1024 * 1024)) == "6.5G");
+}

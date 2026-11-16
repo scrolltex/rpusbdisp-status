@@ -45,6 +45,33 @@ std::string format_bytes_kb(uint64_t kb) {
     return buf;
 }
 
+Level level_disk_pct(double pct) {
+    if (pct < 80) return Level::Ok;
+    if (pct <= 90) return Level::Warn;
+    return Level::Crit;
+}
+
+Level level_disk_temp(double c) {
+    if (c < 60) return Level::Ok;
+    if (c <= 70) return Level::Warn;
+    return Level::Crit;
+}
+
+std::string format_size(uint64_t bytes) {
+    static const char* units[] = {"B", "K", "M", "G", "T", "P"};
+    double v = double(bytes);
+    int u = 0;
+    while (v >= 1024.0 && u < 5) {
+        v /= 1024.0;
+        ++u;
+    }
+    char buf[32];
+    if (v >= 100.0 || u == 0) std::snprintf(buf, sizeof(buf), "%.0f%s", std::floor(v), units[u]);
+    else if (v >= 10.0) std::snprintf(buf, sizeof(buf), "%.0f%s", std::floor(v), units[u]);
+    else std::snprintf(buf, sizeof(buf), "%.1f%s", std::floor(v * 10) / 10, units[u]);
+    return buf;
+}
+
 std::string format_rate(double bps) {
     static const char* units[] = {"B/s", "KB/s", "MB/s", "GB/s"};
     int u = 0;

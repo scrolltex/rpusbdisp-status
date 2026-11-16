@@ -3,6 +3,7 @@
 #include "data/collector.h"
 #include "options.h"
 #include "ui/app.h"
+#include "ui/screen_disks.h"
 #include "ui/screen_docker.h"
 #include "ui/screen_overview.h"
 
@@ -80,9 +81,12 @@ int main(int argc, char** argv) {
     Collector collector(cc);
     collector.start();
 
+    // Page order: Disks · Overview (home) · Docker. Page numbers are relative to home.
     App app;
+    app.add(std::make_unique<DisksScreen>());
     app.add(std::make_unique<OverviewScreen>());
     app.add(std::make_unique<DockerScreen>());
+    app.set_home(1);
     if (!app.valid_offset(opt->start_page)) {
         std::fprintf(stderr, "--start-page %d is out of range\n", opt->start_page);
         return 2;
