@@ -62,6 +62,8 @@ third_party   lvgl, rpusbdisp (submodules); nlohmann/json, doctest (vendored)
   deadline); a dead hard-mounted NFS blocks forever. SMART comes from JSON
   files written by the root `rpusbdisp-smart.timer`; the program itself must
   never need root or `CAP_SYS_ADMIN`.
+- Never wake sleeping HDDs: no hwmon (`drivetemp`) reads for rotational disks,
+  `smartctl -n standby` in the timer. `statvfs` and `/proc/diskstats` are safe.
 
 ## Display quirks (learned on hardware — do not "simplify" away)
 

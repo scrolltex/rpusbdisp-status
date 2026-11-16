@@ -137,3 +137,35 @@ TEST_CASE("select_mounts works on the unfiltered list: /boot, bind mounts, trail
     CHECK(s[2].mount_point == "/mnt/media2");
     CHECK(s[2].nfs);
 }
+
+TEST_CASE("parse_smart_json reads the current temperature") {
+    auto a = parse_smart_json(fixture("smart/ata_temp.json"));
+    REQUIRE(a.temp_c);
+    CHECK(*a.temp_c == 35);
+    CHECK_FALSE(parse_smart_json(fixture("smart/ata_ok.json")).temp_c);
+}
+
+TEST_CASE("read_smart: a standby marker newer than the result means asleep, not stale") {
+    fs::path dir = fs::temp_directory_path() / ("status-smart-sb-" + std::to_string(::getpid()));
+    fs::create_directories(dir);
+    fs::copy_file(std::string(FIXTURES_DIR) + "/smart/ata_temp.json", dir / "sda.json",
+                  fs::copy_options::overwrite_existing);
+    fs::last_write_time(dir / "sda.json", fs::file_time_type::clock::now() - std::chrono::hours(5));
+    std::ofstream(dir / "sda.standby");  // touched just now by the timer
+    auto r = read_smart(dir.string(), "sda", std::chrono::system_clock::now());
+    CHECK(r.state == SmartState::Ok);
+    CHECK(r.asleep);
+    CHECK_FALSE(r.stale);
+    // marker older than the result: awake again
+    fs::last_write_time(dir / "sda.standby", fs::file_time_type::clock::now() - std::chrono::hours(6));
+    auto awake = read_smart(dir.string(), "sda", std::chrono::system_clock::now());
+    CHECK_FALSE(awake.asleep);
+    CHECK(awake.stale);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("is_rotational") {
+    FakeSys sys;
+    CHECK(is_rotational(BlockDev{"sda", "sda"}, sys.root.string()));
+    CHECK_FALSE(is_rotational(BlockDev{"nvme0n1", "nvme0"}, sys.root.string()));
+}

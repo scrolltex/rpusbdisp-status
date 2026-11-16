@@ -35,6 +35,7 @@ struct DiskInfo {
     SmartState smart = SmartState::Unknown;
     std::optional<int> wear_pct;
     bool smart_stale = false;
+    bool smart_asleep = false;  // HDD in standby: last known values are shown
     std::optional<NetRate> io;  // rx = read, tx = write (bytes/s)
 };
 

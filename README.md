@@ -98,6 +98,9 @@ To rotate the picture or swap bytes, edit `ExecStart` in
   `/run/rpusbdisp-status/smart/<device>.json`. The display program only reads
   these files (`--smart-dir` to change). A `?` after the badge means the data
   is older than 30 minutes.
+- Sleeping HDDs are never woken: `smartctl -n standby` skips them (the badge
+  shows `zz` with the last result), and spinning disks take their temperature
+  from SMART instead of `drivetemp`.
 
 ## Adding a screen
 

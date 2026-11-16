@@ -20,13 +20,22 @@ for dev in $DEVICES; do
     tmp="$OUT_DIR/.$name.json.tmp"
     # smartctl's exit status is a bit mask that is often non-zero on healthy
     # disks, so only the presence of output decides.
-    "$SMARTCTL" --json=c -H -A "$dev" > "$tmp" 2>/dev/null
+    # -n standby: never spin up a sleeping HDD just to read SMART.
+    "$SMARTCTL" -n standby --json=c -H -A "$dev" > "$tmp" 2>/dev/null
+    if grep -qi 'standby mode' "$tmp"; then
+        # Asleep: keep the last result and tell the display why it is old.
+        rm -f "$tmp"
+        touch "$OUT_DIR/$name.standby"
+        chmod 0644 "$OUT_DIR/$name.standby"
+        continue
+    fi
     # Error output from a disk smartctl cannot open (dying drive) has no
     # smart_status; keep the last good file so the badge goes stale (?)
     # instead of disappearing.
     if [[ -s "$tmp" ]] && grep -q '"smart_status"' "$tmp"; then
         chmod 0644 "$tmp"
         mv -f "$tmp" "$OUT_DIR/$name.json"
+        rm -f "$OUT_DIR/$name.standby"
     else
         rm -f "$tmp"
     fi

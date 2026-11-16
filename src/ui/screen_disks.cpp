@@ -125,7 +125,8 @@ void DisksScreen::fill(Row& r, const DiskInfo& d) {
             const char* name = d.smart == SmartState::Ok ? "OK" : d.smart == SmartState::Warn ? "WARN" : "FAIL";
             Level lvl = d.smart == SmartState::Ok ? Level::Ok : d.smart == SmartState::Warn ? Level::Warn : Level::Crit;
             std::string badge = std::string(name) + (d.smart_stale ? "?" : "");
-            info += "  " + colored(badge, d.smart_stale ? color_dim() : level_color(lvl));
+            info += "  " + colored(badge, d.smart_stale || d.smart_asleep ? color_dim() : level_color(lvl));
+            if (d.smart_asleep) info += " " + colored("zz", color_dim());
             if (d.wear_pct) info += " " + colored(std::to_string(*d.wear_pct) + "%", color_dim());
         }
     }

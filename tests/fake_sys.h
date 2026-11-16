@@ -32,6 +32,21 @@ struct FakeSys {
         fs::create_directory_symlink(disk / "nvme0n1p2", dm / "slaves/nvme0n1p2");
         fs::create_directory_symlink(dm, root / "dev/block/253:0");
         fs::create_directory_symlink(dm, root / "class/block/dm-0");
+        // A SATA HDD sda (rotational, drivetemp hwmon) with partition sda1.
+        fs::path sda = root / "devices/pci0000:00/ata1/host0/target0:0:0/0:0:0:0/block/sda";
+        fs::create_directories(sda / "sda1");
+        std::ofstream(sda / "sda1/partition") << "1\n";
+        fs::create_directories(sda / "queue");
+        std::ofstream(sda / "queue/rotational") << "1\n";
+        fs::path scsi = sda.parent_path().parent_path();
+        fs::create_directories(scsi / "hwmon/hwmon5");
+        std::ofstream(scsi / "hwmon/hwmon5/temp1_input") << "40000\n";
+        fs::create_directory_symlink(scsi, sda / "device");
+        fs::create_directory_symlink(sda / "sda1", root / "dev/block/8:1");
+        fs::create_directory_symlink(sda, root / "class/block/sda");
+        fs::create_directory_symlink(sda / "sda1", root / "class/block/sda1");
+        fs::create_directories(disk / "queue");
+        std::ofstream(disk / "queue/rotational") << "0\n";
     }
     ~FakeSys() { std::filesystem::remove_all(root); }
 };

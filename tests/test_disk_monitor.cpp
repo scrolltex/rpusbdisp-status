@@ -182,3 +182,27 @@ TEST_CASE("disk monitor: a mount that disappears and comes back starts fresh") {
     CHECK_FALSE(d[1].io);  // returned mount: no stale IO history
     CHECK(d[0].io);        // untouched row keeps its history
 }
+
+TEST_CASE("disk monitor: HDD temperature comes from SMART, never from drivetemp") {
+    FakeSys sys;
+    FakeProc proc;
+    std::ofstream(proc.root / "self/mountinfo") << "29 1 8:1 / /srv rw - ext4 /dev/sda1 rw\n";
+    fs::path smart = fs::temp_directory_path() / ("status-smartdir2-" + std::to_string(::getpid()));
+    fs::create_directories(smart);
+    DiskMonitorConfig cfg;
+    cfg.proc_root = proc.root.string();
+    cfg.sysfs_root = sys.root.string();
+    cfg.smart_dir = smart.string();
+    cfg.local_statvfs = [](const std::string&) { return std::optional<SpaceInfo>(SpaceInfo{1000, 1}); };
+    DiskMonitor m(cfg);
+    auto d = m.sample();
+    REQUIRE(d.size() == 1);
+    CHECK(d[0].device == "sda");
+    CHECK_FALSE(d[0].temp_c);  // no SMART file yet; drivetemp (40°C) must not be read
+
+    fs::copy_file(std::string(FIXTURES_DIR) + "/smart/ata_temp.json", smart / "sda.json");
+    d = m.sample();
+    REQUIRE(d[0].temp_c);
+    CHECK(*d[0].temp_c == 35);
+    fs::remove_all(smart);
+}

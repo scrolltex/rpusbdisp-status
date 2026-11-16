@@ -38,7 +38,8 @@ void DiskMonitor::refresh_mounts() {
             r.probe = std::make_unique<NfsProbe>(m.mount_point, cfg_.nfs_statvfs, cfg_.nfs_deadline);
         } else {
             r.dev = resolve_block_device(m, cfg_.sysfs_root);
-            if (r.dev) r.temp_input = find_disk_temp_input(*r.dev, cfg_.sysfs_root);
+            // Spinning disks: no hwmon reads (drivetemp would wake them); use SMART instead.
+            if (r.dev && !is_rotational(*r.dev, cfg_.sysfs_root)) r.temp_input = find_disk_temp_input(*r.dev, cfg_.sysfs_root);
         }
         next.push_back(std::move(r));
     }
@@ -90,6 +91,8 @@ std::vector<DiskInfo> DiskMonitor::sample() {
                 d.smart = smart.state;
                 d.wear_pct = smart.wear_pct;
                 d.smart_stale = smart.stale;
+                d.smart_asleep = smart.asleep;
+                if (!r.temp_input) d.temp_c = smart.temp_c;
             }
             if (r.temp_input) d.temp_c = read_temp_c(*r.temp_input);
         }

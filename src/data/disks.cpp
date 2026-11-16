@@ -156,6 +156,12 @@ std::optional<BlockDev> resolve_block_device(const MountEntry& m, const std::str
     return std::nullopt;
 }
 
+bool is_rotational(const BlockDev& d, const std::string& sysfs_root) {
+    std::ifstream f(fs::path(sysfs_root) / "class/block" / d.disk / "queue/rotational");
+    int v = 0;
+    return (f >> v) && v == 1;
+}
+
 std::optional<std::string> find_disk_temp_input(const BlockDev& d, const std::string& sysfs_root) {
     const fs::path root(sysfs_root);
     std::error_code ec;
@@ -192,6 +198,9 @@ SmartInfo parse_smart_json(const std::string& text) {
     auto media = num(nvme, "media_errors");
     if (!passed && !critical) return r;  // nothing we can judge
 
+    if (j.contains("temperature") && j["temperature"].is_object()) {
+        if (auto t = num(j["temperature"], "current")) r.temp_c = double(*t);
+    }
     if (used) r.wear_pct = int(*used);
     if ((passed && !*passed) || (critical && *critical != 0)) r.state = SmartState::Fail;
     else if ((used && *used >= 90) || (media && *media > 0)) r.state = SmartState::Warn;
@@ -206,6 +215,12 @@ SmartInfo read_smart(const std::string& dir, const std::string& controller, std:
     SmartInfo r = parse_smart_json(std::string(std::istreambuf_iterator<char>(f), {}));
     std::error_code ec;
     auto mtime = fs::last_write_time(p, ec);
+    std::error_code ec2;
+    auto standby = fs::last_write_time(fs::path(dir) / (controller + ".standby"), ec2);
+    if (!ec && !ec2 && standby > mtime) {
+        r.asleep = true;
+        mtime = standby;  // checked recently, just could not be read without waking it
+    }
     if (!ec) {
         // file_clock -> system_clock (C++17: via the difference to "now" on each clock)
         auto age = std::chrono::duration_cast<std::chrono::seconds>(fs::file_time_type::clock::now() - mtime) +

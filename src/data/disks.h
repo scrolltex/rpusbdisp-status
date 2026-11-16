@@ -32,6 +32,8 @@ struct BlockDev {
     std::string controller;  // SMART file name: nvme0, sda
 };
 std::optional<BlockDev> resolve_block_device(const MountEntry& m, const std::string& sysfs_root);
+// Spinning disk: hwmon (drivetemp) reads would wake it up.
+bool is_rotational(const BlockDev& d, const std::string& sysfs_root);
 std::optional<std::string> find_disk_temp_input(const BlockDev& d, const std::string& sysfs_root);
 
 struct IoCounters {
@@ -42,6 +44,8 @@ struct SmartInfo {
     SmartState state = SmartState::Unknown;
     std::optional<int> wear_pct;  // NVMe percentage_used
     bool stale = false;           // result file older than 30 min
+    bool asleep = false;          // HDD was in standby at the last check (result kept)
+    std::optional<double> temp_c; // temperature.current, if reported
 };
 // smartctl --json output: FAIL if not passed or critical_warning != 0;
 // WARN if percentage_used >= 90 or media_errors > 0; else OK.

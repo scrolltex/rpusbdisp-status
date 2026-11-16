@@ -37,6 +37,16 @@ if [[ -f "$script" ]]; then
     chmod +x "$tmp/smartctl-err"
     SMARTCTL="$tmp/smartctl-err" OUT_DIR="$tmp/out" DEVICES="/dev/nvme0" bash "$script"
     grep -q passed "$tmp/out/nvme0.json" 2>/dev/null || { echo "FAIL: error output replaced a good SMART result"; fail=1; }
+    # Sleeping disk: smartctl must be called with -n standby; its standby
+    # answer keeps the last result and touches <name>.standby.
+    printf '#!/bin/sh\necho "$*" >> "%s/args"\necho "{\\"smartctl\\":{\\"messages\\":[{\\"string\\":\\"Device is in STANDBY mode, exit(2)\\"}]}}"\nexit 2\n' "$tmp" > "$tmp/smartctl-sleep"
+    chmod +x "$tmp/smartctl-sleep"
+    SMARTCTL="$tmp/smartctl-sleep" OUT_DIR="$tmp/out" DEVICES="/dev/sda" bash "$script"
+    grep -q -- '-n standby' "$tmp/args" 2>/dev/null || { echo "FAIL: smartctl not called with -n standby"; fail=1; }
+    grep -q passed "$tmp/out/sda.json" 2>/dev/null || { echo "FAIL: standby replaced the last SMART result"; fail=1; }
+    [[ -e "$tmp/out/sda.standby" ]] || { echo "FAIL: standby marker not written"; fail=1; }
+    SMARTCTL="$tmp/smartctl-ok" OUT_DIR="$tmp/out" DEVICES="/dev/sda" bash "$script"
+    [[ ! -e "$tmp/out/sda.standby" ]] || { echo "FAIL: standby marker not removed after a normal run"; fail=1; }
     rm -rf "$tmp"
 fi
 exit $fail
