@@ -12,12 +12,24 @@ struct MemInfo {
     uint64_t available_kb = 0;
 };
 
+struct NetRate {
+    double rx_bps = 0;  // bytes per second received
+    double tx_bps = 0;  // bytes per second sent
+};
+
+struct NetSnapshot {
+    bool ok = false;     // a rate is available
+    std::string iface;   // interface the rate belongs to
+    NetRate rate;
+};
+
 struct SystemSnapshot {
     std::string hostname;
     double cpu = 0;              // percent 0..100
     MemInfo mem;
     double uptime_s = 0;
     std::optional<double> temp_c;
+    NetSnapshot net;
 };
 
 struct ContainerInfo {

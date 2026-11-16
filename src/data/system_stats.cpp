@@ -1,6 +1,7 @@
 #include "data/system_stats.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -102,6 +103,46 @@ std::optional<std::string> find_temp_source(const std::string& sysfs_root) {
     auto zone0 = root / "class/thermal/thermal_zone0/temp";
     if (fs::exists(zone0, ec)) return zone0.string();
     return std::nullopt;
+}
+
+std::optional<std::string> default_route_iface(const std::string& route_text) {
+    std::istringstream in(route_text);
+    std::string line;
+    std::getline(in, line);  // header
+    while (std::getline(in, line)) {
+        std::istringstream ls(line);
+        std::string iface, dest, gateway, flags;
+        if (!(ls >> iface >> dest >> gateway >> flags)) continue;
+        unsigned long f = std::strtoul(flags.c_str(), nullptr, 16);
+        if (dest == "00000000" && (f & 0x1) && (f & 0x2)) return iface;  // RTF_UP | RTF_GATEWAY
+    }
+    return std::nullopt;
+}
+
+std::optional<NetCounters> parse_net_dev(const std::string& text, const std::string& iface) {
+    std::istringstream in(text);
+    std::string line;
+    while (std::getline(in, line)) {
+        size_t colon = line.find(':');
+        if (colon == std::string::npos) continue;
+        std::string name = line.substr(0, colon);
+        name.erase(0, name.find_first_not_of(" \t"));
+        if (name != iface) continue;
+        std::istringstream ls(line.substr(colon + 1));
+        uint64_t v[9] = {};
+        for (auto& x : v)
+            if (!(ls >> x)) return std::nullopt;
+        return NetCounters{v[0], v[8]};  // rx bytes, tx bytes
+    }
+    return std::nullopt;
+}
+
+NetRate net_rate(const NetCounters& prev, const NetCounters& cur, double seconds) {
+    NetRate r;
+    if (seconds <= 0) return r;
+    if (cur.rx_bytes >= prev.rx_bytes) r.rx_bps = double(cur.rx_bytes - prev.rx_bytes) / seconds;
+    if (cur.tx_bytes >= prev.tx_bytes) r.tx_bps = double(cur.tx_bytes - prev.tx_bytes) / seconds;
+    return r;
 }
 
 std::optional<double> read_temp_c(const std::string& path) {

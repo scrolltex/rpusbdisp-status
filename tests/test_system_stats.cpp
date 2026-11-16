@@ -108,3 +108,33 @@ TEST_CASE("read_temp_c converts millidegrees") {
     CHECK(*t == doctest::Approx(54.0));
     CHECK_FALSE(read_temp_c((d.path / "nope").string()));
 }
+
+TEST_CASE("default_route_iface picks the UG route with destination 0") {
+    auto i = default_route_iface(read_fixture("net_route.txt"));
+    REQUIRE(i);
+    CHECK(*i == "enp3s0");
+    CHECK_FALSE(default_route_iface(read_fixture("net_route_nodefault.txt")));
+    CHECK_FALSE(default_route_iface(""));
+}
+
+TEST_CASE("parse_net_dev reads one interface, ignores docker ones") {
+    auto c = parse_net_dev(read_fixture("net_dev.txt"), "enp3s0");
+    REQUIRE(c);
+    CHECK(c->rx_bytes == 123456789);
+    CHECK(c->tx_bytes == 98765);
+    auto d = parse_net_dev(read_fixture("net_dev.txt"), "docker0");  // "docker0:5555555" without space
+    REQUIRE(d);
+    CHECK(d->rx_bytes == 5555555);
+    CHECK_FALSE(parse_net_dev(read_fixture("net_dev.txt"), "eth9"));
+    CHECK_FALSE(parse_net_dev(read_fixture("net_dev.txt"), "enp3"));  // no prefix match
+}
+
+TEST_CASE("net_rate per second, counter reset gives 0") {
+    NetRate r = net_rate({1000, 500}, {3048, 1524}, 2.0);
+    CHECK(r.rx_bps == doctest::Approx(1024));
+    CHECK(r.tx_bps == doctest::Approx(512));
+    NetRate z = net_rate({5000, 5000}, {100, 6000}, 1.0);
+    CHECK(z.rx_bps == 0);
+    CHECK(z.tx_bps == doctest::Approx(1000));
+    CHECK(net_rate({0, 0}, {100, 100}, 0.0).rx_bps == 0);
+}

@@ -20,4 +20,16 @@ std::optional<double> parse_uptime(const std::string& text);
 std::optional<std::string> find_temp_source(const std::string& sysfs_root);
 std::optional<double> read_temp_c(const std::string& path);
 
+struct NetCounters {
+    uint64_t rx_bytes = 0;
+    uint64_t tx_bytes = 0;
+};
+
+// Interface of the default route (Destination 00000000, Flags has RTF_GATEWAY) in /proc/net/route.
+std::optional<std::string> default_route_iface(const std::string& route_text);
+// Byte counters of `iface` from /proc/net/dev.
+std::optional<NetCounters> parse_net_dev(const std::string& text, const std::string& iface);
+// Per-direction rate; a counter that went down (interface recreated) gives 0.
+NetRate net_rate(const NetCounters& prev, const NetCounters& cur, double seconds);
+
 }  // namespace status
