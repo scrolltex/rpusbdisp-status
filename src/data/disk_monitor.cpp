@@ -16,8 +16,9 @@ std::string slurp(const std::string& path) {
 DiskMonitor::DiskMonitor(DiskMonitorConfig cfg) : cfg_(std::move(cfg)) {}
 
 void DiskMonitor::refresh_mounts() {
-    auto mounts = parse_mounts(slurp(cfg_.proc_root + "/self/mountinfo"));
-    if (!cfg_.disks.empty()) mounts = select_mounts(mounts, cfg_.disks);
+    const std::string mountinfo = slurp(cfg_.proc_root + "/self/mountinfo");
+    // --disks picks from all mounts, so /boot, bind mounts etc. can be chosen.
+    auto mounts = cfg_.disks.empty() ? parse_mounts(mountinfo) : select_mounts(parse_mounts_all(mountinfo), cfg_.disks);
 
     std::vector<Row> next;
     for (auto& m : mounts) {
@@ -79,6 +80,8 @@ std::vector<DiskInfo> DiskMonitor::sample() {
             if (auto sp = cfg_.local_statvfs(r.mount.mount_point)) {
                 d.total = sp->total;
                 d.used = sp->used;
+            } else {
+                d.available = false;  // e.g. no permission to reach the mount point
             }
             if (r.dev) {
                 d.device = r.dev->controller;

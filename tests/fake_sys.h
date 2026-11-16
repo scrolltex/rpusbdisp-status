@@ -26,6 +26,12 @@ struct FakeSys {
         fs::create_directory_symlink(disk, root / "class/block/nvme0n1");
         fs::create_directories(root / "class/nvme");
         fs::create_directory_symlink(ctrl, root / "class/nvme/nvme0");
+        // LVM on top of nvme0n1p2: dm-0 with a single slave.
+        fs::path dm = root / "devices/virtual/block/dm-0";
+        fs::create_directories(dm / "slaves");
+        fs::create_directory_symlink(disk / "nvme0n1p2", dm / "slaves/nvme0n1p2");
+        fs::create_directory_symlink(dm, root / "dev/block/253:0");
+        fs::create_directory_symlink(dm, root / "class/block/dm-0");
     }
     ~FakeSys() { std::filesystem::remove_all(root); }
 };

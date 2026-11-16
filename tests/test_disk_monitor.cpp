@@ -134,3 +134,51 @@ TEST_CASE("collector: hung NFS does not stop CPU/RAM updates or stop()") {
     gate->cv.notify_all();
     std::this_thread::sleep_for(50ms);
 }
+
+TEST_CASE("disk monitor: failed local statvfs marks the row unavailable") {
+    FakeSys sys;
+    FakeProc proc;
+    DiskMonitorConfig cfg;
+    cfg.proc_root = proc.root.string();
+    cfg.sysfs_root = sys.root.string();
+    cfg.local_statvfs = [](const std::string&) { return std::optional<SpaceInfo>(); };
+    cfg.nfs_statvfs = [](const std::string&) { return std::optional<SpaceInfo>(SpaceInfo{1, 1}); };
+    DiskMonitor m(cfg);
+    auto d = m.sample();
+    REQUIRE(d.size() == 2);
+    CHECK_FALSE(d[0].available);
+}
+
+TEST_CASE("disk monitor: a mount that disappears and comes back starts fresh") {
+    FakeSys sys;
+    FakeProc proc;
+    DiskMonitorConfig cfg;
+    cfg.proc_root = proc.root.string();
+    cfg.sysfs_root = sys.root.string();
+    cfg.mounts_period = 0ms;  // re-read mountinfo every sample
+    cfg.nfs_period = 0ms;
+    std::atomic<int> nfs_calls{0};
+    cfg.nfs_statvfs = [&](const std::string&) {
+        ++nfs_calls;
+        return std::optional<SpaceInfo>(SpaceInfo{10, 5});
+    };
+    cfg.local_statvfs = [](const std::string&) { return std::optional<SpaceInfo>(SpaceInfo{1000, 500}); };
+    DiskMonitor m(cfg);
+    m.sample();
+    std::this_thread::sleep_for(50ms);
+    auto d = m.sample();
+    REQUIRE(d.size() == 2);
+    CHECK(d[0].io);  // history kept between samples
+
+    std::ofstream(proc.root / "self/mountinfo") << "29 1 259:2 / / rw - ext4 /dev/nvme0n1p2 rw\n";
+    d = m.sample();
+    REQUIRE(d.size() == 1);
+
+    std::ofstream(proc.root / "self/mountinfo")
+        << "29 1 259:2 / / rw - ext4 /dev/nvme0n1p2 rw\n"
+           "50 29 0:60 / /mnt/media rw - nfs4 nas:/media rw\n";
+    d = m.sample();
+    REQUIRE(d.size() == 2);
+    CHECK_FALSE(d[1].io);  // returned mount: no stale IO history
+    CHECK(d[0].io);        // untouched row keeps its history
+}

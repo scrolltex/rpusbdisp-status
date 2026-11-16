@@ -31,6 +31,12 @@ if [[ -f "$script" ]]; then
     grep -q passed "$tmp/out/sda.json" 2>/dev/null || { echo "FAIL: sda.json not written"; fail=1; }
     SMARTCTL="$tmp/smartctl-empty" OUT_DIR="$tmp/out2" DEVICES="/dev/nvme0" bash "$script"
     [[ ! -e "$tmp/out2/nvme0.json" ]] || { echo "FAIL: empty smartctl output must not be written"; fail=1; }
+    # A dying disk smartctl cannot open: error JSON without smart_status must
+    # not replace the last good result (the badge then goes stale instead).
+    printf '#!/bin/sh\necho "{\\"smartctl\\":{\\"exit_status\\":2}}"\nexit 2\n' > "$tmp/smartctl-err"
+    chmod +x "$tmp/smartctl-err"
+    SMARTCTL="$tmp/smartctl-err" OUT_DIR="$tmp/out" DEVICES="/dev/nvme0" bash "$script"
+    grep -q passed "$tmp/out/nvme0.json" 2>/dev/null || { echo "FAIL: error output replaced a good SMART result"; fail=1; }
     rm -rf "$tmp"
 fi
 exit $fail

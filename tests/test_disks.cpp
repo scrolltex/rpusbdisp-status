@@ -118,3 +118,22 @@ TEST_CASE("read_smart: missing file, fresh and stale") {
     CHECK(later.stale);
     fs::remove_all(dir);
 }
+
+TEST_CASE("resolve_block_device follows LVM/dm slaves to the physical NVMe") {
+    FakeSys sys;
+    MountEntry m{"/", "ext4", "/dev/mapper/ubuntu--vg-ubuntu--lv", 253, 0, false};
+    auto d = resolve_block_device(m, sys.root.string());
+    REQUIRE(d);
+    CHECK(d->disk == "nvme0n1");
+    CHECK(d->controller == "nvme0");
+}
+
+TEST_CASE("select_mounts works on the unfiltered list: /boot, bind mounts, trailing slash") {
+    auto all = parse_mounts_all(fixture("disks/mountinfo.txt"));
+    auto s = select_mounts(all, {"/boot", "/home/", "/mnt/media2"});
+    REQUIRE(s.size() == 3);
+    CHECK(s[0].mount_point == "/boot");
+    CHECK(s[1].mount_point == "/home");
+    CHECK(s[2].mount_point == "/mnt/media2");
+    CHECK(s[2].nfs);
+}

@@ -48,6 +48,19 @@ std::optional<BlockDev> from_sys_dir(const fs::path& dir) {
     std::error_code ec;
     fs::path p = fs::canonical(dir, ec);
     if (ec) return std::nullopt;
+    // Device-mapper (LVM, LUKS) and md: follow slaves down to the physical
+    // disk; with several (RAID, multi-PV) the first one is used.
+    for (int depth = 0; depth < 8; ++depth) {
+        std::vector<fs::path> slaves;
+        for (auto it = fs::directory_iterator(p / "slaves", ec); !ec && it != fs::directory_iterator(); it.increment(ec))
+            slaves.push_back(it->path());
+        ec.clear();
+        if (slaves.empty()) break;
+        std::sort(slaves.begin(), slaves.end());
+        fs::path next = fs::canonical(slaves.front(), ec);
+        if (ec) return std::nullopt;
+        p = next;
+    }
     if (fs::exists(p / "partition", ec)) p = p.parent_path();
     BlockDev d;
     d.disk = p.filename().string();
@@ -61,7 +74,7 @@ std::optional<BlockDev> from_sys_dir(const fs::path& dir) {
 
 }  // namespace
 
-std::vector<MountEntry> parse_mounts(const std::string& mountinfo) {
+std::vector<MountEntry> parse_mounts_all(const std::string& mountinfo) {
     std::vector<MountEntry> all;
     std::istringstream in(mountinfo);
     std::string line;
@@ -80,9 +93,15 @@ std::vector<MountEntry> parse_mounts(const std::string& mountinfo) {
         m.major = unsigned(std::stoul(majmin.substr(0, colon)));
         m.minor = unsigned(std::stoul(majmin.substr(colon + 1)));
         m.nfs = m.fstype == "nfs" || m.fstype == "nfs4";
-        if (!real_fstype(m.fstype) || skipped_mount_point(m.mount_point)) continue;
         all.push_back(std::move(m));
     }
+    return all;
+}
+
+std::vector<MountEntry> parse_mounts(const std::string& mountinfo) {
+    std::vector<MountEntry> all;
+    for (auto& m : parse_mounts_all(mountinfo))
+        if (real_fstype(m.fstype) && !skipped_mount_point(m.mount_point)) all.push_back(std::move(m));
 
     // One row per device (NFS: per export), shortest mount point wins.
     auto key = [](const MountEntry& m) {
@@ -107,12 +126,17 @@ std::vector<MountEntry> parse_mounts(const std::string& mountinfo) {
 
 std::vector<MountEntry> select_mounts(const std::vector<MountEntry>& all, const std::vector<std::string>& wanted) {
     std::vector<MountEntry> out;
-    for (const auto& w : wanted)
-        for (const auto& m : all)
+    for (std::string w : wanted) {
+        while (w.size() > 1 && w.back() == '/') w.pop_back();
+        // Last mount wins: a later mount on the same path hides earlier ones.
+        for (auto it = all.rbegin(); it != all.rend(); ++it) {
+            const auto& m = *it;
             if (m.mount_point == w) {
                 out.push_back(m);
                 break;
             }
+        }
+    }
     return out;
 }
 

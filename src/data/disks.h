@@ -21,7 +21,10 @@ struct MountEntry {
 // Real filesystems from /proc/self/mountinfo: filtered, deduplicated, ordered
 // ("/" first, other local by mount point, then NFS by mount point).
 std::vector<MountEntry> parse_mounts(const std::string& mountinfo);
-// Only the requested mount points, in the requested order (--disks).
+// Every mount from /proc/self/mountinfo, unfiltered (for --disks).
+std::vector<MountEntry> parse_mounts_all(const std::string& mountinfo);
+// Only the requested mount points, in the requested order (--disks); pass the
+// unfiltered list so /boot, bind mounts etc. can be chosen explicitly.
 std::vector<MountEntry> select_mounts(const std::vector<MountEntry>& all, const std::vector<std::string>& wanted);
 
 struct BlockDev {

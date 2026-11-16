@@ -21,7 +21,10 @@ for dev in $DEVICES; do
     # smartctl's exit status is a bit mask that is often non-zero on healthy
     # disks, so only the presence of output decides.
     "$SMARTCTL" --json=c -H -A "$dev" > "$tmp" 2>/dev/null
-    if [[ -s "$tmp" ]]; then
+    # Error output from a disk smartctl cannot open (dying drive) has no
+    # smart_status; keep the last good file so the badge goes stale (?)
+    # instead of disappearing.
+    if [[ -s "$tmp" ]] && grep -q '"smart_status"' "$tmp"; then
         chmod 0644 "$tmp"
         mv -f "$tmp" "$OUT_DIR/$name.json"
     else
