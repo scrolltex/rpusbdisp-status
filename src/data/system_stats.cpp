@@ -106,17 +106,26 @@ std::optional<std::string> find_temp_source(const std::string& sysfs_root) {
 }
 
 std::optional<std::string> default_route_iface(const std::string& route_text) {
+    // Default route = destination 0.0.0.0 with mask 0.0.0.0 and RTF_UP; a gateway is
+    // not required (PPPoE, WireGuard). With several, the lowest metric wins.
     std::istringstream in(route_text);
     std::string line;
     std::getline(in, line);  // header
+    std::optional<std::string> best;
+    unsigned long best_metric = 0;
     while (std::getline(in, line)) {
         std::istringstream ls(line);
-        std::string iface, dest, gateway, flags;
-        if (!(ls >> iface >> dest >> gateway >> flags)) continue;
-        unsigned long f = std::strtoul(flags.c_str(), nullptr, 16);
-        if (dest == "00000000" && (f & 0x1) && (f & 0x2)) return iface;  // RTF_UP | RTF_GATEWAY
+        std::string iface, dest, gateway, flags, refcnt, use, metric, mask;
+        if (!(ls >> iface >> dest >> gateway >> flags >> refcnt >> use >> metric >> mask)) continue;
+        const unsigned long f = std::strtoul(flags.c_str(), nullptr, 16);
+        if (dest != "00000000" || mask != "00000000" || !(f & 0x1)) continue;
+        const unsigned long m = std::strtoul(metric.c_str(), nullptr, 10);
+        if (!best || m < best_metric) {
+            best = iface;
+            best_metric = m;
+        }
     }
-    return std::nullopt;
+    return best;
 }
 
 std::optional<NetCounters> parse_net_dev(const std::string& text, const std::string& iface) {

@@ -25,7 +25,7 @@ struct NetCounters {
     uint64_t tx_bytes = 0;
 };
 
-// Interface of the default route (Destination 00000000, Flags has RTF_GATEWAY) in /proc/net/route.
+// Interface of the default route in /proc/net/route: destination and mask 0, RTF_UP, lowest metric.
 std::optional<std::string> default_route_iface(const std::string& route_text);
 // Byte counters of `iface` from /proc/net/dev.
 std::optional<NetCounters> parse_net_dev(const std::string& text, const std::string& iface);

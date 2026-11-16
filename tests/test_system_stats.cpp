@@ -138,3 +138,21 @@ TEST_CASE("net_rate per second, counter reset gives 0") {
     CHECK(z.tx_bps == doctest::Approx(1000));
     CHECK(net_rate({0, 0}, {100, 100}, 0.0).rx_bps == 0);
 }
+
+TEST_CASE("default_route_iface: gateway-less default route (PPPoE, WireGuard)") {
+    auto i = default_route_iface(read_fixture("net_route_ppp.txt"));
+    REQUIRE(i);
+    CHECK(*i == "ppp0");
+}
+
+TEST_CASE("default_route_iface: lowest metric wins regardless of order") {
+    auto i = default_route_iface(read_fixture("net_route_metric.txt"));
+    REQUIRE(i);
+    CHECK(*i == "enp3s0");
+}
+
+TEST_CASE("default_route_iface: OpenVPN /1 routes are not the default route") {
+    auto i = default_route_iface(read_fixture("net_route_vpn.txt"));
+    REQUIRE(i);
+    CHECK(*i == "enp3s0");
+}
