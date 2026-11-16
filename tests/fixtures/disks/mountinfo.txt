@@ -1,0 +1,11 @@
+22 1 0:21 / /proc rw,nosuid,nodev,noexec,relatime shared:12 - proc proc rw
+29 1 259:2 / / rw,relatime shared:1 - ext4 /dev/nvme0n1p2 rw
+30 29 259:2 /home /home rw,relatime shared:1 - ext4 /dev/nvme0n1p2 rw
+31 29 259:1 / /boot/efi rw,relatime shared:2 - vfat /dev/nvme0n1p1 rw,fmask=0077
+32 29 259:3 / /boot rw,relatime shared:3 - ext4 /dev/nvme0n1p3 rw
+40 29 0:50 / /var/lib/docker/overlay2/abc/merged rw,relatime - overlay overlay rw,lowerdir=x
+41 29 7:0 / /snap/core22/1 ro,nodev,relatime shared:5 - squashfs /dev/loop0 ro
+42 29 0:26 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=1624088k
+50 29 0:60 / /mnt/media rw,relatime shared:7 - nfs4 nas:/media rw,vers=4.2
+51 29 0:61 / /mnt/my\040backup rw,relatime shared:8 - nfs nas:/backup rw,vers=3
+52 29 0:60 / /mnt/media2 rw,relatime shared:9 - nfs4 nas:/media rw,vers=4.2

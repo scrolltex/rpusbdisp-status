@@ -1,0 +1,9 @@
+device proc mounted on /proc with fstype proc
+device nas:/media mounted on /mnt/media with fstype nfs4 statvers=1.1
+	opts:	rw,vers=4.2
+	age:	100
+	bytes:	100 200 0 0 4096 8192 1 2
+	RPC iostats version: 1.1  p/v: 100003/4 (nfs)
+device nas:/backup mounted on /mnt/my\040backup with fstype nfs statvers=1.1
+	opts:	rw,vers=3
+	bytes:	1 2 3 4 5 6 7 8
