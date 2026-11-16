@@ -55,6 +55,13 @@ third_party   lvgl, rpusbdisp (submodules); nlohmann/json, doctest (vendored)
 - New screen: subclass `status::Screen`, keep the bottom 18 px free for the
   page dots, register it in `src/main.cpp`. New data goes into
   `src/data/snapshot.h` and is filled in `collector.cpp`.
+- Pages: Disks · Overview (home) · Docker. Page numbers are relative to home
+  (`--start-page -1/0/1`); auto-return to home after 60 s without touch.
+- Disks: `DiskMonitor` (in the 1 s system loop). Never call `statvfs` on an NFS
+  mount from the collector thread — use `NfsProbe` (detached worker, 2 s
+  deadline); a dead hard-mounted NFS blocks forever. SMART comes from JSON
+  files written by the root `rpusbdisp-smart.timer`; the program itself must
+  never need root or `CAP_SYS_ADMIN`.
 
 ## Display quirks (learned on hardware — do not "simplify" away)
 

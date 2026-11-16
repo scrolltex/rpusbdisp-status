@@ -25,12 +25,19 @@ else
     echo "warning: group 'docker' not found; the Docker screen will show 'Docker unavailable' (the service still starts)" >&2
 fi
 
+if ! command -v smartctl >/dev/null; then
+    echo "installing smartmontools for the SMART badge on the Disks page"
+    apt-get install -y smartmontools || echo "warning: smartmontools not installed; SMART badges will be missing" >&2
+fi
+
 cmake --install "$BUILD_DIR" --prefix /usr/local
 
 udevadm control --reload
 udevadm trigger --subsystem-match=usb --attr-match=idVendor=fccf
 
 systemctl daemon-reload
+systemctl enable --now rpusbdisp-smart.timer
+systemctl start rpusbdisp-smart.service || true
 systemctl enable status-display.service
 systemctl restart status-display.service
 systemctl --no-pager --lines=5 status status-display.service || true

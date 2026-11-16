@@ -4,12 +4,16 @@ Server status screen for the **RoboPeak Mini USB Display** (320×240, touch),
 built with [LVGL](https://lvgl.io) on top of the usermode SDK from
 [scrolltex/rpusbdisp](https://github.com/scrolltex/rpusbdisp).
 
-Two pages, switched by swiping left/right or tapping the dots at the bottom:
+Three pages, switched by swiping left/right or tapping the dots at the bottom.
+The program starts on Overview and slides back to it after a minute without touch.
 
-- **Overview** — hostname, uptime, CPU, RAM, temperature, network speed
+- **Disks** — space per filesystem (local and NFS), NVMe temperature, SMART
+  badge (`OK` / `WARN` / `FAIL`, wear %), read/write activity
+- **Overview** (home) — hostname, uptime, CPU, RAM, temperature, network speed
 - **Docker** — running/other counts and a scrollable list of containers (read-only)
 
 ![screens](docs/screenshots.png)
+![disks](docs/screenshots-disks.png)
 
 ## Build
 
@@ -82,6 +86,19 @@ To rotate the picture or swap bytes, edit `ExecStart` in
 > [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy)
 > in front of the socket and point `--docker-socket` at it.
 
+## Disks page
+
+- Filesystems are found automatically (ext4, xfs, btrfs, … and NFS); Docker
+  overlays, snaps, `/boot` and duplicates are skipped. `--disks /,/mnt/media`
+  picks them explicitly.
+- A dead NFS server only marks its row `unavailable` (2 s deadline); the rest
+  keeps working.
+- SMART needs root, so `install.sh` installs `smartmontools` and the
+  `rpusbdisp-smart.timer`, which runs `smartctl` every 10 minutes and writes
+  `/run/rpusbdisp-status/smart/<device>.json`. The display program only reads
+  these files (`--smart-dir` to change). A `?` after the badge means the data
+  is older than 30 minutes.
+
 ## Adding a screen
 
 1. Create `src/ui/screen_<name>.{h,cpp}` with a class derived from
@@ -89,7 +106,9 @@ To rotate the picture or swap bytes, edit `ExecStart` in
    bottom 18 px of the tile free for the page dots.
 2. If it needs new data, add fields to `src/data/snapshot.h` and fill them in
    `src/data/collector.cpp`.
-3. Register it in `src/main.cpp`: `app.add(std::make_unique<MyScreen>());`
+3. Register it in `src/main.cpp`. Pages left of Overview get negative numbers,
+   pages right of it positive ones (`--start-page`), so keep `set_home()`
+   pointing at Overview.
 
 ## Layout
 

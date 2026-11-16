@@ -1,0 +1,9 @@
+[Unit]
+Description=Collect SMART health for rpusbdisp-status every 10 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target
