@@ -14,6 +14,8 @@ const char* usage() {
            "  --no-coalesce                 send every redrawn area separately (debugging)\n"
            "  --swap-bytes                  swap the two bytes of each pixel (if colours are garbled)\n"
            "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
+           "  --disks /,/mnt/x              mount points on the Disks page (default: automatic)\n"
+           "  --smart-dir DIR               SMART results (default /run/rpusbdisp-status/smart)\n"
            "  --net-iface NAME              interface for NET speed (default: default route)\n"
            "  --docker-socket PATH          default /var/run/docker.sock\n"
            "  --dump-dir DIR                where the dump backend writes frame.ppm\n"
@@ -52,6 +54,19 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
             o.rotate = std::atoi(v.c_str());
         } else if (a == "--temp-path") {
             if (!value(o.temp_path)) return std::nullopt;
+        } else if (a == "--smart-dir") {
+            if (!value(o.smart_dir)) return std::nullopt;
+        } else if (a == "--disks") {
+            if (!value(v)) return std::nullopt;
+            o.disks.clear();
+            size_t start = 0;
+            while (start <= v.size()) {
+                size_t comma = v.find(',', start);
+                std::string item = v.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
+                if (!item.empty()) o.disks.push_back(item);
+                if (comma == std::string::npos) break;
+                start = comma + 1;
+            }
         } else if (a == "--net-iface") {
             if (!value(o.net_iface)) return std::nullopt;
         } else if (a == "--docker-socket") {

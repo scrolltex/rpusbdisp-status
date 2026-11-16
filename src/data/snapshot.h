@@ -25,6 +25,19 @@ struct NetSnapshot {
     NetRate rate;
 };
 
+struct DiskInfo {
+    std::string mount_point;
+    std::string device;  // "nvme0", "sda"; empty for NFS or when unknown
+    bool nfs = false;
+    bool available = true;  // NFS: server answered within the deadline
+    uint64_t total = 0, used = 0;  // bytes
+    std::optional<double> temp_c;
+    SmartState smart = SmartState::Unknown;
+    std::optional<int> wear_pct;
+    bool smart_stale = false;
+    std::optional<NetRate> io;  // rx = read, tx = write (bytes/s)
+};
+
 struct SystemSnapshot {
     std::string hostname;
     double cpu = 0;              // percent 0..100
@@ -32,6 +45,7 @@ struct SystemSnapshot {
     double uptime_s = 0;
     std::optional<double> temp_c;
     NetSnapshot net;
+    std::vector<DiskInfo> disks;
 };
 
 struct ContainerInfo {

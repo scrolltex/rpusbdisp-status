@@ -1,5 +1,6 @@
 #pragma once
 
+#include "data/nfs_probe.h"
 #include "data/snapshot.h"
 
 #include <chrono>
@@ -7,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace status {
 
@@ -16,6 +18,10 @@ struct CollectorConfig {
     std::string temp_path;  // empty: auto-detect under sysfs_root
     std::string docker_socket = "/var/run/docker.sock";
     std::string net_iface;  // empty: interface of the default route
+    std::string smart_dir = "/run/rpusbdisp-status/smart";
+    std::vector<std::string> disks;  // --disks; empty = automatic
+    StatvfsFn nfs_statvfs = statvfs_space;  // test hook
+    std::chrono::milliseconds nfs_deadline{2000};
     std::chrono::milliseconds sys_period{1000};
     std::chrono::milliseconds docker_period{5000};
 };

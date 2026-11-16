@@ -75,6 +75,8 @@ int main(int argc, char** argv) {
     cc.temp_path = opt->temp_path;
     cc.docker_socket = opt->docker_socket;
     cc.net_iface = opt->net_iface;
+    cc.smart_dir = opt->smart_dir;
+    cc.disks = opt->disks;
     Collector collector(cc);
     collector.start();
 

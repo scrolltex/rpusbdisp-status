@@ -1,5 +1,6 @@
 #include "data/collector.h"
 
+#include "data/disk_monitor.h"
 #include "data/docker_client.h"
 #include "data/system_stats.h"
 
@@ -61,6 +62,14 @@ bool Collector::wait_for(std::chrono::milliseconds d) {
 
 void Collector::run_system() {
     std::optional<CpuTimes> prev;
+    DiskMonitorConfig dcfg;
+    dcfg.proc_root = cfg_.proc_root;
+    dcfg.sysfs_root = cfg_.sysfs_root;
+    dcfg.smart_dir = cfg_.smart_dir;
+    dcfg.disks = cfg_.disks;
+    dcfg.nfs_statvfs = cfg_.nfs_statvfs;
+    dcfg.nfs_deadline = cfg_.nfs_deadline;
+    DiskMonitor disks(dcfg);
     std::string net_prev_iface;
     std::optional<NetCounters> net_prev;
     std::chrono::steady_clock::time_point net_prev_time;
@@ -94,6 +103,8 @@ void Collector::run_system() {
         net_prev = counters;
         net_prev_iface = iface ? *iface : std::string();
         net_prev_time = now;
+
+        s.disks = disks.sample();
 
         std::lock_guard<std::mutex> lk(mu_);
         snap_.sys = std::move(s);

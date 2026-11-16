@@ -104,3 +104,17 @@ TEST_CASE("start-tile is gone") {
     std::string err;
     CHECK_FALSE(parse({"--start-tile", "1"}, err));
 }
+
+TEST_CASE("smart-dir and disks") {
+    std::string err;
+    auto d = parse({}, err);
+    REQUIRE(d);
+    CHECK(d->smart_dir == "/run/rpusbdisp-status/smart");
+    CHECK(d->disks.empty());
+    auto o = parse({"--smart-dir", "/tmp/s", "--disks", "/,/mnt/media"}, err);
+    REQUIRE(o);
+    CHECK(o->smart_dir == "/tmp/s");
+    REQUIRE(o->disks.size() == 2);
+    CHECK(o->disks[0] == "/");
+    CHECK(o->disks[1] == "/mnt/media");
+}

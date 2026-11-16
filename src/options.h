@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace status {
 
@@ -10,6 +11,8 @@ struct Options {
     int rotate = 0;
     std::string temp_path;
     std::string docker_socket = "/var/run/docker.sock";
+    std::string smart_dir = "/run/rpusbdisp-status/smart";
+    std::vector<std::string> disks;  // explicit mount points for the Disks page
     std::string net_iface;  // empty: auto (default route)
     std::string dump_dir = ".";
     bool swap_bytes = false;
