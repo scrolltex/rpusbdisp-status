@@ -24,6 +24,14 @@ TEST_CASE("defaults") {
     CHECK_FALSE(o->swap_bytes);
     CHECK(o->start_tile == 0);
     CHECK(o->bgr);  // RoboPeak display is BGR565
+    CHECK(o->coalesce);
+}
+
+TEST_CASE("no-coalesce") {
+    std::string err;
+    auto o = parse({"--no-coalesce"}, err);
+    REQUIRE(o);
+    CHECK_FALSE(o->coalesce);
 }
 
 TEST_CASE("color order") {

@@ -10,6 +10,7 @@ const char* usage() {
            "  --backend rpusbdisp|dump|sdl  output (default rpusbdisp)\n"
            "  --rotate 0|180                screen rotation (default 0)\n"
            "  --color-order bgr|rgb         display colour order (default bgr; rpusbdisp only)\n"
+           "  --no-coalesce                 send every redrawn area separately (debugging)\n"
            "  --swap-bytes                  swap the two bytes of each pixel (if colours are garbled)\n"
            "  --temp-path PATH              temperature file in millidegrees (default: auto)\n"
            "  --docker-socket PATH          default /var/run/docker.sock\n"
@@ -59,6 +60,8 @@ std::optional<Options> parse_options(int argc, char** argv, std::string& error) 
                 return std::nullopt;
             }
             o.bgr = v == "bgr";
+        } else if (a == "--no-coalesce") {
+            o.coalesce = false;
         } else if (a == "--swap-bytes") {
             o.swap_bytes = true;
         } else if (a == "--start-tile") {

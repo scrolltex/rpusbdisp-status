@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
     }
     if (auto* pb = dynamic_cast<PartialBackend*>(backend.get())) {
         pb->set_swap_bytes(opt->swap_bytes);
+        pb->set_coalesce(opt->coalesce);
         // Colour order is a property of the physical display; the dump file stays RGB.
         if (opt->backend == "rpusbdisp") pb->set_bgr(opt->bgr);
     }

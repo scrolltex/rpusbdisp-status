@@ -20,6 +20,8 @@ bool PartialBackend::init(lv_display_rotation_t rotation) {
     lv_display_set_driver_data(disp_, this);
     lv_display_set_rotation(disp_, rotation);
     tmp_.resize(size_t(kWidth) * kBufLines);
+    shadow_.assign(size_t(kWidth) * kHeight, 0);
+    frame_.resize(size_t(kWidth) * kHeight);
 
     indev_ = lv_indev_create();
     lv_indev_set_type(indev_, LV_INDEV_TYPE_POINTER);
@@ -50,7 +52,35 @@ void PartialBackend::flush_cb(lv_display_t* d, const lv_area_t* area, uint8_t* p
     }
     if (self->swap_bytes_) lv_draw_rgb565_swap(const_cast<uint16_t*>(px), uint32_t(w * h));
 
-    self->blit(phys.x1, phys.y1, w, h, px);
+    if (!self->coalesce_) {
+        self->blit(phys.x1, phys.y1, w, h, px);
+        lv_display_flush_ready(d);
+        return;
+    }
+
+    for (int32_t row = 0; row < h; ++row)
+        std::memcpy(&self->shadow_[size_t(phys.y1 + row) * kWidth + size_t(phys.x1)], px + size_t(row) * w,
+                    size_t(w) * 2);
+    if (self->have_dirty_) {
+        lv_area_t& u = self->dirty_;
+        u.x1 = std::min(u.x1, phys.x1);
+        u.y1 = std::min(u.y1, phys.y1);
+        u.x2 = std::max(u.x2, phys.x2);
+        u.y2 = std::max(u.y2, phys.y2);
+    } else {
+        self->dirty_ = phys;
+        self->have_dirty_ = true;
+    }
+
+    if (lv_display_flush_is_last(d)) {
+        const lv_area_t a = self->dirty_;
+        const int32_t dw = lv_area_get_width(&a), dh = lv_area_get_height(&a);
+        for (int32_t row = 0; row < dh; ++row)
+            std::memcpy(&self->frame_[size_t(row) * dw], &self->shadow_[size_t(a.y1 + row) * kWidth + size_t(a.x1)],
+                        size_t(dw) * 2);
+        self->blit(a.x1, a.y1, dw, dh, self->frame_.data());
+        self->have_dirty_ = false;
+    }
     lv_display_flush_ready(d);
 }
 

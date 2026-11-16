@@ -21,6 +21,10 @@ public:
     void set_swap_bytes(bool v) { swap_bytes_ = v; }
     // Device expects BGR565 (red in the low bits) instead of RGB565.
     void set_bgr(bool v) { bgr_ = v; }
+    // Collect all areas LVGL redraws in one refresh into a shadow framebuffer
+    // and push their bounding box as a single blit (like the kernel driver),
+    // instead of one blit per area.
+    void set_coalesce(bool v) { coalesce_ = v; }
 
 protected:
     // Push w*h tightly packed RGB565 pixels to physical position (x, y).
@@ -39,6 +43,11 @@ private:
 
     bool swap_bytes_ = false;
     bool bgr_ = false;
+    bool coalesce_ = true;
+    std::vector<uint16_t> shadow_;  // physical framebuffer, device pixel format
+    std::vector<uint16_t> frame_;   // contiguous copy of the dirty box
+    lv_area_t dirty_{0, 0, -1, -1};
+    bool have_dirty_ = false;
     lv_indev_t* indev_ = nullptr;
     std::vector<uint16_t> tmp_;
     std::mutex touch_mu_;
